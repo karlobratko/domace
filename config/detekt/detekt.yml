@@ -608,22 +608,6 @@ style:
     maxJumpCount: 1
   MagicNumber:
     active: false
-    excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**', '**/*.kts' ]
-    ignoreNumbers:
-      - '-1'
-      - '0'
-      - '1'
-      - '2'
-    ignoreHashCodeFunction: true
-    ignorePropertyDeclaration: true
-    ignoreLocalVariableDeclaration: true
-    ignoreConstantDeclaration: true
-    ignoreCompanionObjectPropertyDeclaration: true
-    ignoreAnnotation: true
-    ignoreNamedArgument: true
-    ignoreEnums: true
-    ignoreRanges: true
-    ignoreExtensionFunctions: true
   MandatoryBracesLoops:
     active: false
   MaxChainedCallsOnSameLine:
@@ -1051,16 +1035,3 @@ formatting:
     autoCorrect: true
     indentSize: 4
     maxLineLength: 120
-
-libraries:
-  active: true
-  ForbiddenPublicDataClass:
-    active: true
-    ignorePackages:
-      - '*.internal'
-      - '*.internal.*'
-  LibraryCodeMustSpecifyReturnType:
-    active: true
-    allowOmitUnit: false
-  LibraryEntitiesShouldNotBePublic:
-    active: true

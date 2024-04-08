@@ -17,9 +17,6 @@ import io.ktor.server.plugins.forwardedheaders.ForwardedHeaders
 import io.ktor.server.plugins.forwardedheaders.XForwardedHeaders
 import io.ktor.server.plugins.hsts.HSTS
 
-const val PRIORITY = 10.0
-const val MIN_SIZE = 1024L
-
 fun Application.configureHTTP() {
     install(HSTS) {
         includeSubDomains = true
@@ -42,8 +39,8 @@ fun Application.configureHTTP() {
             priority = 1.0
         }
         deflate {
-            priority = PRIORITY
-            minimumSize(MIN_SIZE)
+            priority = 10.0
+            minimumSize(1024)
         }
     }
 }

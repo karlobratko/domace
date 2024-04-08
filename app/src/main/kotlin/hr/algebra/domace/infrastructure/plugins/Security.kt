@@ -53,10 +53,11 @@ fun Application.configureSecurity() {
         }
     }
     authentication {
-        val usersInMyRealmToHA1: Map<String, ByteArray> = mapOf(
-            // pass="test", HA1=MD5("test:MyRealm:pass")="fb12475e62dedc5c2744d98eb73b8877"
-            "test" to hex("fb12475e62dedc5c2744d98eb73b8877")
-        )
+        val usersInMyRealmToHA1: Map<String, ByteArray> =
+            mapOf(
+                // pass="test", HA1=MD5("test:MyRealm:pass")="fb12475e62dedc5c2744d98eb73b8877"
+                "test" to hex("fb12475e62dedc5c2744d98eb73b8877")
+            )
 
         digest("myDigestAuth") {
             digestProvider { userName, _ ->
