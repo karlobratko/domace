@@ -12,8 +12,13 @@ import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics
+import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
+import java.time.Duration
 import org.slf4j.event.Level.INFO
 
 fun Application.configureMonitoring() {
@@ -21,7 +26,19 @@ fun Application.configureMonitoring() {
 
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
-        // ...
+        meterBinders = listOf(
+            JvmMemoryMetrics(),
+            JvmGcMetrics(),
+            ProcessorMetrics()
+        )
+        distributionStatisticConfig = DistributionStatisticConfig.builder()
+            .percentilesHistogram(true)
+            .maximumExpectedValue(Duration.ofSeconds(20).toNanos().toDouble())
+            .serviceLevelObjectives(
+                Duration.ofMillis(100).toNanos().toDouble(),
+                Duration.ofMillis(500).toNanos().toDouble()
+            )
+            .build()
     }
     install(CallLogging) {
         level = INFO
@@ -33,7 +50,7 @@ fun Application.configureMonitoring() {
         verify { callId -> callId.isNotEmpty() }
     }
     routing {
-        get("/metrics-micrometer") {
+        get("/metrics") {
             call.respond(appMicrometerRegistry.scrape())
         }
     }

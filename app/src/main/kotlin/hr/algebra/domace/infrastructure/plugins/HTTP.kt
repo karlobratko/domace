@@ -32,7 +32,9 @@ fun Application.configureHTTP() {
         allowMethod(Delete)
         allowMethod(Patch)
         allowHeader(Authorization)
-        allowHost("0.0.0.0:5000")
+        if (this@configureHTTP.developmentMode) {
+            anyHost()
+        }
     }
     install(Compression) {
         gzip {
