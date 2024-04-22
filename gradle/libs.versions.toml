@@ -20,6 +20,7 @@ logback = "1.4.14"
 kotest-core = "5.8.0"
 kotest-ktor = "2.0.0"
 kotest-arrow = "1.4.0"
+kotest-datetime = "2.0.0"
 mockk = "1.13.10"
 detekt = "1.23.3"
 ktlint = "12.1.0"
@@ -95,6 +96,7 @@ test-kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 test-kotest-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest-core" }
 test-kotest-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest-core" }
 test-kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest-core" }
+test-kotest-property-datetime = { module = "io.kotest.extensions:kotest-property-datetime", version.ref = "kotest-datetime" }
 
 test-kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest-core" }
 test-kotest-assertions-json = { module = "io.kotest:kotest-assertions-json", version.ref = "kotest-core" }
@@ -192,5 +194,6 @@ test-kotest-assertions = [
 
 test-kotest-extensions = [
     "test-kotest-extensions-now",
-    "test-kotest-extensions-jvm"
+    "test-kotest-extensions-jvm",
+    "test-kotest-property-datetime"
 ]

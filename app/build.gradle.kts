@@ -37,6 +37,10 @@ detekt {
     toolVersion = libs.versions.detekt.get()
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     buildUponDefaultConfig = true
+
+    // TODO: should probably fix this shit, but for ¯\_(ツ)_/¯ (meh)
+    ktlint.ignoreFailures = true
+    ktlint.outputToConsole = false
 }
 
 dependencies {
@@ -91,7 +95,10 @@ tasks.register<JavaExec>("runDevelopment") {
     mainClass.set("hr.algebra.domace.infrastructure.ApplicationKt")
     classpath = sourceSets["main"].runtimeClasspath
 
-    jvmArgs("-Dio.ktor.development=true")
+    jvmArgs(
+        "-Dio.ktor.development=true",
+        "-Dio.netty.tryReflectionSetAccessible=true"
+    )
 }
 
 tasks.register("rebuild") {

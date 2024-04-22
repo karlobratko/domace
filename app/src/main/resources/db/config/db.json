@@ -1,0 +1,11 @@
+{
+  "jdbcUrl": "jdbc:postgresql://localhost:5432/domace",
+  "dataSource": {
+    "driverClass": "org.postgresql.Driver",
+    "driver": "postgresql",
+    "database": "domace",
+    "user": "user",
+    "password": "password"
+  },
+  "maximumPoolSize": 10
+}

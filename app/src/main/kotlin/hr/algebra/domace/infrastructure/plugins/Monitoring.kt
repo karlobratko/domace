@@ -16,39 +16,44 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig
-import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import java.time.Duration
-import org.slf4j.event.Level.INFO
+import io.micrometer.prometheus.PrometheusConfig.DEFAULT as Default
+import org.slf4j.event.Level.INFO as Info
 
 fun Application.configureMonitoring() {
-    val appMicrometerRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    val appMicrometerRegistry = PrometheusMeterRegistry(Default)
 
     install(MicrometerMetrics) {
         registry = appMicrometerRegistry
-        meterBinders = listOf(
-            JvmMemoryMetrics(),
-            JvmGcMetrics(),
-            ProcessorMetrics()
-        )
-        distributionStatisticConfig = DistributionStatisticConfig.builder()
-            .percentilesHistogram(true)
-            .maximumExpectedValue(Duration.ofSeconds(20).toNanos().toDouble())
-            .serviceLevelObjectives(
-                Duration.ofMillis(100).toNanos().toDouble(),
-                Duration.ofMillis(500).toNanos().toDouble()
+        meterBinders =
+            listOf(
+                JvmMemoryMetrics(),
+                JvmGcMetrics(),
+                ProcessorMetrics()
             )
-            .build()
+        distributionStatisticConfig =
+            DistributionStatisticConfig.builder()
+                .percentilesHistogram(true)
+                .maximumExpectedValue(Duration.ofSeconds(20).toNanos().toDouble())
+                .serviceLevelObjectives(
+                    Duration.ofMillis(100).toNanos().toDouble(),
+                    Duration.ofMillis(500).toNanos().toDouble()
+                )
+                .build()
     }
+
     install(CallLogging) {
-        level = INFO
+        level = Info
         filter { call -> call.request.path().startsWith("/") }
         callIdMdc("call-id")
     }
+
     install(CallId) {
         header(XRequestId)
         verify { callId -> callId.isNotEmpty() }
     }
+
     routing {
         get("/metrics") {
             call.respond(appMicrometerRegistry.scrape())
