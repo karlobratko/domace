@@ -25,16 +25,36 @@ import kotlin.contracts.contract
 import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.Int.Companion.MAX_VALUE as Max
-import kotlin.contracts.InvocationKind.EXACTLY_ONCE as ExactlyOnce
 import kotlin.time.Duration.Companion.INFINITE as Infinite
 import kotlin.time.Duration.Companion.ZERO as Zero
 import kotlinx.coroutines.CoroutineStart.UNDISPATCHED as Undispatched
+import kotlin.Int.Companion.MAX_VALUE as Max
+import kotlin.contracts.InvocationKind.EXACTLY_ONCE as ExactlyOnce
 
+/**
+ * Extension function for the System Clock. It retrieves the current time in UTC timezone and converts it
+ * to LocalDateTime.
+ *
+ * @return LocalDateTime representation of the current time in UTC timezone.
+ */
 fun Clock.System.utcLocalDateTime() = now().toLocalDateTime(TimeZone.UTC)
 
+/**
+ * This function is an extension function for the System Clock. It retrieves the current time in UTC timezone and
+ * converts it to a LocalDate.
+ *
+ * @return LocalDate representation of the current time in UTC timezone.
+ */
 fun Clock.System.utcLocalDate() = now().toLocalDateTime(TimeZone.UTC).date
 
+/**
+ * This function is an extension function for the String class. It converts the first character of the string
+ * to uppercase.
+ * If the string is empty, it returns an empty string.
+ *
+ * @return A new string with the first character converted to uppercase. If the original string is empty, it returns
+ * an empty string.
+ */
 fun String.uppercaseFirstChar() = this.lowercase().replaceFirstChar(Char::uppercaseChar)
 
 /**

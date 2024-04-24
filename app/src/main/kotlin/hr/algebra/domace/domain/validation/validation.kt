@@ -24,7 +24,7 @@ class Validator<Error, A>(private val value: A) {
         }
     }
 
-    infix fun with(block: (A) -> EitherNel<Error, Any>) {
+    infix fun <B> with(block: (A) -> EitherNel<Error, B>) {
         block(value).onLeft {
             errors.addAll(it)
         }
@@ -51,26 +51,23 @@ fun <Error, A> UnitValidation() = ValidationScope<Error, A> { right() }
 
 typealias StringValidationScope<Error> = ValidationScope<Error, String>
 
-fun <Error> StringMinLengthValidation(min: Int, error: () -> Error) =
-    StringValidationScope {
-        applyWrapEitherNel {
-            ensure(length >= min, error)
-        }
+fun <Error> StringMinLengthValidation(min: Int, error: () -> Error) = StringValidationScope {
+    applyWrapEitherNel {
+        ensure(length >= min, error)
     }
+}
 
-fun <Error> StringMaxLengthValidation(max: Int, error: () -> Error) =
-    StringValidationScope {
-        applyWrapEitherNel {
-            ensure(length <= max, error)
-        }
+fun <Error> StringMaxLengthValidation(max: Int, error: () -> Error) = StringValidationScope {
+    applyWrapEitherNel {
+        ensure(length <= max, error)
     }
+}
 
-fun <Error> StringMatchingPatternValidation(regex: Regex, error: () -> Error) =
-    StringValidationScope {
-        applyWrapEitherNel {
-            ensure(matches(regex), error)
-        }
+fun <Error> StringMatchingPatternValidation(regex: Regex, error: () -> Error) = StringValidationScope {
+    applyWrapEitherNel {
+        ensure(matches(regex), error)
     }
+}
 
 fun <Error> StringNoneSatisfiesPredicateValidation(predicate: (Char) -> Boolean, error: () -> Error) =
     StringValidationScope {
@@ -95,12 +92,11 @@ fun <Error> StringAllSatisfiesPredicateValidation(predicate: (Char) -> Boolean, 
 
 typealias IntValidationScope<Error> = ValidationScope<Error, Int>
 
-fun <Error> IntInRangeValidation(range: IntRange, error: () -> Error) =
-    IntValidationScope validation@{
-        applyWrapEitherNel {
-            ensure(this@validation in range) { error() }
-        }
+fun <Error> IntInRangeValidation(range: IntRange, error: () -> Error) = IntValidationScope validation@{
+    applyWrapEitherNel {
+        ensure(this@validation in range) { error() }
     }
+}
 
 fun <Error> IntInInclusiveRangeValidation(min: Int, max: Int, error: () -> Error) =
     IntInRangeValidation(min..max, error)
@@ -110,12 +106,11 @@ fun <Error> IntInExclusiveRangeValidation(min: Int, maxExclusive: Int, error: ()
 
 typealias BigDecimalValidationScope<Error> = ValidationScope<Error, BigDecimal>
 
-fun <Error> BigDecimalLessThanValidation(max: BigDecimal, error: () -> Error) =
-    BigDecimalValidationScope validation@{
-        applyWrapEitherNel {
-            ensure(this@validation < max) { error() }
-        }
+fun <Error> BigDecimalLessThanValidation(max: BigDecimal, error: () -> Error) = BigDecimalValidationScope validation@{
+    applyWrapEitherNel {
+        ensure(this@validation < max) { error() }
     }
+}
 
 fun <Error> BigDecimalLessThanOrEqualValidation(max: BigDecimal, error: () -> Error) =
     BigDecimalValidationScope validation@{
@@ -140,30 +135,26 @@ fun <Error> BigDecimalGreaterThanOrEqualValidation(min: BigDecimal, error: () ->
 
 typealias ShortValidationScope<Error> = ValidationScope<Error, Short>
 
-fun <Error> ShortLessThanValidation(max: Short, error: () -> Error) =
-    ShortValidationScope validation@{
-        applyWrapEitherNel {
-            ensure(this@validation < max) { error() }
-        }
+fun <Error> ShortLessThanValidation(max: Short, error: () -> Error) = ShortValidationScope validation@{
+    applyWrapEitherNel {
+        ensure(this@validation < max) { error() }
     }
+}
 
-fun <Error> ShortLessThanOrEqualValidation(max: Short, error: () -> Error) =
-    ShortValidationScope validation@{
-        applyWrapEitherNel {
-            ensure(this@validation <= max) { error() }
-        }
+fun <Error> ShortLessThanOrEqualValidation(max: Short, error: () -> Error) = ShortValidationScope validation@{
+    applyWrapEitherNel {
+        ensure(this@validation <= max) { error() }
     }
+}
 
-fun <Error> ShortGreaterThanValidation(min: Short, error: () -> Error) =
-    ShortValidationScope validation@{
-        applyWrapEitherNel {
-            ensure(this@validation > min) { error() }
-        }
+fun <Error> ShortGreaterThanValidation(min: Short, error: () -> Error) = ShortValidationScope validation@{
+    applyWrapEitherNel {
+        ensure(this@validation > min) { error() }
     }
+}
 
-fun <Error> ShortGreaterThanOrEqualValidation(min: Short, error: () -> Error) =
-    ShortValidationScope validation@{
-        applyWrapEitherNel {
-            ensure(this@validation >= min) { error() }
-        }
+fun <Error> ShortGreaterThanOrEqualValidation(min: Short, error: () -> Error) = ShortValidationScope validation@{
+    applyWrapEitherNel {
+        ensure(this@validation >= min) { error() }
     }
+}

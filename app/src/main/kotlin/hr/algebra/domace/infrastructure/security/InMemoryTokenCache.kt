@@ -7,30 +7,28 @@ import com.mayakapps.kache.KacheStrategy
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.TokenCache
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlin.time.TimeSource
 
-fun InMemoryTokenCache(expireAfter: Token.Lasting) =
-    object : TokenCache {
-        private val cache = InMemoryKache<Token, User.Id>(maxSize = 32 * 1024 * 1024) {
-            strategy = KacheStrategy.LRU
-            creationScope = CoroutineScope(Dispatchers.IO)
-            expireAfterWriteDuration = expireAfter.value
-            onEntryRemoved = { _, _, _, _ -> }
-        }
+private const val CACHE_MAX_SIZE: Long = 100 * 1024 * 1024 // 100 MB
 
-        override suspend fun put(token: Token, claims: User.Id) {
-            cache.evictExpired()
-            cache.put(token, claims)
-        }
-
-        override suspend fun get(token: Token): Option<User.Id> {
-            cache.evictExpired()
-            return cache.get(token).toOption()
-        }
-
-        override suspend fun revoke(token: Token) {
-            cache.remove(token)
-            cache.evictExpired()
-        }
+fun InMemoryTokenCache(
+    expireAfter: Token.Lasting,
+    maxSize: Long = CACHE_MAX_SIZE,
+    timeSource: TimeSource = TimeSource.Monotonic
+) = object : TokenCache {
+    private val cache = InMemoryKache<Token, User.Id>(maxSize = maxSize) {
+        strategy = KacheStrategy.LRU
+        this.timeSource = timeSource
+        expireAfterWriteDuration = expireAfter.value
     }
+
+    override suspend fun put(token: Token, claims: User.Id) {
+        cache.put(token, claims)
+    }
+
+    override suspend fun get(token: Token): Option<User.Id> = cache.get(token).toOption()
+
+    override suspend fun revoke(token: Token) {
+        cache.remove(token)
+    }
+}

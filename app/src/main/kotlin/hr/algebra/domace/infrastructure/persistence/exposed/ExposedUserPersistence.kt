@@ -52,124 +52,123 @@ object UsersTable : LongIdTable("users", "user_pk") {
     val registrationDate = timestampWithTimeZone("registration_date").defaultExpression(CurrentTimestamp())
 }
 
-fun ExposedUserPersistence(db: Database) =
-    object : UserPersistence {
-        override suspend fun insert(user: User.New): Either<DomainError, User.Entity> =
-            ioTransaction(db) {
-                either {
-                    val id =
-                        catchOrThrow<ExposedSQLException, EntityID<Long>> {
-                            UsersTable.insertAndGetId {
-                                it[username] = user.username.value
-                                it[email] = user.email.value
-                                it[passwordHash] = user.password.value
-                            }
-                        }.mapLeft { err ->
-                            with(ExposedSQLExceptionToDomainErrorConversion) {
-                                err.convert()
-                            }
-                        }.bind()
-
-                    UsersTable
-                        .selectAll()
-                        .where { UsersTable.id eq id }
-                        .single()
-                        .toRecord()
-                }
-            }
-
-        override suspend fun select(username: User.Username): Option<User.Entity> =
-            ioTransaction(db) {
-                UsersTable
-                    .selectAll()
-                    .where { UsersTable.username eq username.value }
-                    .singleOrNone()
-                    .map { it.toRecord() }
-            }
-
-        override suspend fun select(username: User.Username, password: User.Password): Option<User.Entity> =
-            ioTransaction(db) {
-                UsersTable
-                    .selectAll()
-                    .where { (UsersTable.username eq username.value) }
-                    .singleOrNone { checkPassword(password.value, it[UsersTable.passwordHash]) }
-                    .map { it.toRecord() }
-            }
-
-        override suspend fun select(id: User.Id): Option<User.Entity> =
-            ioTransaction(db) {
-                UsersTable
-                    .selectAll()
-                    .where { UsersTable.id eq id.value }
-                    .singleOrNone()
-                    .map { it.toRecord() }
-            }
-
-        override suspend fun update(data: User.Edit): Either<DomainError, User.Entity> =
-            ioTransaction(db) {
-                either {
-                    val updatedCount =
-                        catchOrThrow<ExposedSQLException, Int> {
-                            UsersTable.update({ UsersTable.id eq data.id.value }) {
-                                it[username] = data.username.value
-                                it[email] = data.email.value
-                            }
-                        }.mapLeft { err: ExposedSQLException ->
-                            with(ExposedSQLExceptionToDomainErrorConversion) {
-                                err.convert()
-                            }
-                        }.bind()
-
-                    ensure(updatedCount > 0) { NothingWasChanged }
-
-                    UsersTable
-                        .selectAll()
-                        .where { UsersTable.id eq data.id.value }
-                        .single()
-                        .toRecord()
-                }
-            }
-
-        override suspend fun update(data: User.ChangePassword): Either<DomainError, User.Entity> =
-            ioTransaction(db) {
-                either {
-                    val user = select(data.username, data.oldPassword).getOrRaise { InvalidUsernameOrPassword }
-
-                    val updatedCount =
-                        UsersTable.update({ UsersTable.id eq user.id.value }) {
-                            it[passwordHash] = data.newPassword.value
+fun ExposedUserPersistence(db: Database) = object : UserPersistence {
+    override suspend fun insert(user: User.New): Either<DomainError, User.Entity> =
+        ioTransaction(db) {
+            either {
+                val id =
+                    catchOrThrow<ExposedSQLException, EntityID<Long>> {
+                        UsersTable.insertAndGetId {
+                            it[username] = user.username.value
+                            it[email] = user.email.value
+                            it[passwordHash] = user.password.value
                         }
+                    }.mapLeft { err ->
+                        with(ExposedSQLExceptionToDomainErrorConversion) {
+                            err.convert()
+                        }
+                    }.bind()
 
-                    ensure(updatedCount > 0) { NothingWasChanged }
-
-                    UsersTable
-                        .selectAll()
-                        .where { UsersTable.username eq data.username.value }
-                        .single()
-                        .toRecord()
-                }
+                UsersTable
+                    .selectAll()
+                    .where { UsersTable.id eq id }
+                    .single()
+                    .toRecord()
             }
+        }
 
-        override suspend fun delete(id: User.Id): Either<DomainError, User.Id> =
-            ioTransaction(db) {
-                either {
-                    val deletedCount = UsersTable.deleteWhere { UsersTable.id eq id.value }
+    override suspend fun select(username: User.Username): Option<User.Entity> =
+        ioTransaction(db) {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.username eq username.value }
+                .singleOrNone()
+                .map { it.toRecord() }
+        }
 
-                    ensure(deletedCount > 0) { NothingWasChanged }
+    override suspend fun select(username: User.Username, password: User.Password): Option<User.Entity> =
+        ioTransaction(db) {
+            UsersTable
+                .selectAll()
+                .where { (UsersTable.username eq username.value) }
+                .singleOrNone { checkPassword(password.value, it[UsersTable.passwordHash]) }
+                .map { it.toRecord() }
+        }
 
-                    id
-                }
+    override suspend fun select(id: User.Id): Option<User.Entity> =
+        ioTransaction(db) {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.id eq id.value }
+                .singleOrNone()
+                .map { it.toRecord() }
+        }
+
+    override suspend fun update(data: User.Edit): Either<DomainError, User.Entity> =
+        ioTransaction(db) {
+            either {
+                val updatedCount =
+                    catchOrThrow<ExposedSQLException, Int> {
+                        UsersTable.update({ UsersTable.id eq data.id.value }) {
+                            it[username] = data.username.value
+                            it[email] = data.email.value
+                        }
+                    }.mapLeft { err: ExposedSQLException ->
+                        with(ExposedSQLExceptionToDomainErrorConversion) {
+                            err.convert()
+                        }
+                    }.bind()
+
+                ensure(updatedCount > 0) { NothingWasChanged }
+
+                UsersTable
+                    .selectAll()
+                    .where { UsersTable.id eq data.id.value }
+                    .single()
+                    .toRecord()
             }
+        }
 
-        private fun ResultRow.toRecord(): User.Entity =
-            User.Entity(
-                User.Id(this[UsersTable.id].value),
-                User.Username(this[UsersTable.username]),
-                User.Email(this[UsersTable.email]),
-                User.PasswordHash(this[UsersTable.passwordHash]),
-                User.RegistrationDate(this[UsersTable.registrationDate].toInstant().toKotlinInstant())
-            )
-    }
+    override suspend fun update(data: User.ChangePassword): Either<DomainError, User.Entity> =
+        ioTransaction(db) {
+            either {
+                val user = select(data.username, data.oldPassword).getOrRaise { InvalidUsernameOrPassword }
+
+                val updatedCount =
+                    UsersTable.update({ UsersTable.id eq user.id.value }) {
+                        it[passwordHash] = data.newPassword.value
+                    }
+
+                ensure(updatedCount > 0) { NothingWasChanged }
+
+                UsersTable
+                    .selectAll()
+                    .where { UsersTable.username eq data.username.value }
+                    .single()
+                    .toRecord()
+            }
+        }
+
+    override suspend fun delete(id: User.Id): Either<DomainError, User.Id> =
+        ioTransaction(db) {
+            either {
+                val deletedCount = UsersTable.deleteWhere { UsersTable.id eq id.value }
+
+                ensure(deletedCount > 0) { NothingWasChanged }
+
+                id
+            }
+        }
+
+    private fun ResultRow.toRecord(): User.Entity =
+        User.Entity(
+            User.Id(this[UsersTable.id].value),
+            User.Username(this[UsersTable.username]),
+            User.Email(this[UsersTable.email]),
+            User.PasswordHash(this[UsersTable.passwordHash]),
+            User.RegistrationDate(this[UsersTable.registrationDate].toInstant().toKotlinInstant())
+        )
+}
 
 private typealias ExposedSQLExceptionToDomainErrorConversionScope = ConversionScope<ExposedSQLException, DomainError>
 

@@ -1,7 +1,7 @@
 package hr.algebra.domace.domain.security
 
 import arrow.core.NonEmptyList
-import kotlinx.datetime.Clock
+import hr.algebra.domace.domain.config.RoundedInstantProvider
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
@@ -58,7 +58,7 @@ sealed interface Claims {
 
     enum class Use { Refresh, Access }
 
-    @JvmInline value class IssuedAt(val value: Instant = Clock.System.now())
+    @JvmInline value class IssuedAt(val value: Instant = RoundedInstantProvider.now())
 
     @JvmInline value class ExpiresAt(val value: Instant)
 }

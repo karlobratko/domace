@@ -1,5 +1,3 @@
-CREATE TYPE token_status AS ENUM ('active', 'revoked');
-
 CREATE TABLE users
 (
     user_pk           BIGSERIAL PRIMARY KEY,
@@ -16,7 +14,7 @@ CREATE TABLE refresh_tokens
     token      VARCHAR(1024)            NOT NULL,
     issued_at  TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    status     token_status             NOT NULL,
+    status     SMALLINT                 NOT NULL,
     FOREIGN KEY (user_fk) REFERENCES users (user_pk)
 );
 

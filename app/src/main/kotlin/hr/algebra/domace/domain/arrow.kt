@@ -1,6 +1,8 @@
 package hr.algebra.domace.domain
 
+import arrow.core.Either
 import arrow.core.EitherNel
+import arrow.core.Nel
 import arrow.core.NonEmptyList
 import arrow.core.Option
 import arrow.core.getOrElse
@@ -11,10 +13,83 @@ import arrow.core.raise.RaiseAccumulate
 import arrow.core.raise.either
 import arrow.core.right
 import arrow.core.toNonEmptyListOrNone
+import arrow.core.toOption
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.experimental.ExperimentalTypeInference
 import kotlin.contracts.InvocationKind.AT_MOST_ONCE as AtMostOnce
+
+/**
+ * This function is an extension function for the List class. It attempts to convert the list to a NonEmptyList (Nel).
+ * If the conversion is successful (i.e., the list is not empty), it returns an Either.Right containing
+ * the NonEmptyList.
+ * If the conversion is not successful (i.e., the list is empty), it returns an Either.Left containing an error.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the elements in the list.
+ * @param error A function that creates an instance of `Error`. This function is called if the list is empty.
+ * @return An Either containing the NonEmptyList if the conversion is successful (Either.Right), or an error if it is
+ * not (Either.Left).
+ */
+fun <Error, A> List<A>.toNonEmptyListOrLeft(error: () -> Error): Either<Error, Nel<A>> =
+    toNonEmptyListOrNone().toEither(error)
+
+/**
+ * This function is an extension function for the List class. It attempts to convert the list to a NonEmptyList (Nel).
+ * If the conversion is successful (i.e., the list is not empty), it returns an Either.Right containing the
+ * NonEmptyList wrapped in a Nel.
+ * If the conversion is not successful (i.e., the list is empty), it returns an Either.Left containing an error wrapped
+ * in a Nel.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the elements in the list.
+ * @param error A function that creates an instance of `Error`. This function is called if the list is empty.
+ * @return An EitherNel containing the NonEmptyList if the conversion is successful (Either.Right), or an error if it
+ * is not (Either.Left).
+ */
+fun <Error, A> List<A>.toNonEmptyListOrLeftNel(error: () -> Error): EitherNel<Error, Nel<A>> =
+    toNonEmptyListOrLeft { error().nel() }
+
+/**
+ * Extension function for the String class to convert a string to a Long or None.
+ *
+ * This function attempts to convert the string on which it's invoked to a Long.
+ * If the conversion is successful, it returns an Option containing the Long value.
+ * If the conversion is not successful (for example, if the string does not represent a valid Long),
+ * it returns None.
+ *
+ * @return An Option containing the Long value if the conversion is successful, or None if it is not.
+ */
+fun String.toLongOrNone(): Option<Long> = toLongOrNull().toOption()
+
+/**
+ * This function is an extension function for the String class. It attempts to convert the string to a Long.
+ * If the conversion is successful, it returns an Either.Right containing the Long value.
+ * If the conversion is not successful (for example, if the string does not represent a valid Long),
+ * it returns an Either.Left containing an error.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param error A function that creates an instance of `Error`. This function is called if the string cannot be
+ * converted to a Long.
+ * @return An Either containing the Long value if the conversion is successful (Either.Right), or an error if it is
+ * not (Either.Left).
+ */
+fun <Error> String.toLongOrLeft(error: () -> Error): Either<Error, Long> = toLongOrNone().toEither(error)
+
+/**
+ * This function is an extension function for the String class. It attempts to convert the string to a Long.
+ * If the conversion is successful, it returns an Either.Right containing the Long value wrapped in a
+ * NonEmptyList (Nel).
+ * If the conversion is not successful (for example, if the string does not represent a valid Long),
+ * it returns an Either.Left containing an error wrapped in a NonEmptyList.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param error A function that creates an instance of `Error`. This function is called if the string cannot be
+ * converted to a Long.
+ * @return An EitherNel containing the Long value if the conversion is successful (Either.Right), or an error if it is
+ * not (Either.Left).
+ */
+fun <Error> String.toLongOrLeftNel(error: () -> Error): EitherNel<Error, Long> = toLongOrLeft { error().nel() }
 
 /**
  * This function is an extension function on the `Option<A>` type from the Arrow library.

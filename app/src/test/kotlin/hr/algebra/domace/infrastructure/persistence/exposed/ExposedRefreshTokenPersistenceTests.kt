@@ -3,6 +3,7 @@ package hr.algebra.domace.infrastructure.persistence.exposed
 import arrow.core.Either
 import hr.algebra.domace.domain.DbError.NothingWasChanged
 import hr.algebra.domace.domain.DomainError
+import hr.algebra.domace.domain.config.RoundedInstantProvider
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
@@ -17,7 +18,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.should
-import kotlinx.datetime.Clock.System.now
 import org.jetbrains.exposed.sql.SchemaUtils.create
 import org.jetbrains.exposed.sql.SchemaUtils.drop
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -145,7 +145,7 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
         persistence.prolong(
             RefreshToken.Prolong(
                 RefreshToken.Id(1),
-                Claims.ExpiresAt(now() + 15.minutes)
+                Claims.ExpiresAt(RoundedInstantProvider.now() + 15.minutes)
             )
         ) shouldBeLeft NothingWasChanged
     }
@@ -187,8 +187,8 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
             persistence,
             userId = userId,
             token = Token.Refresh("token"),
-            issuedAt = Claims.IssuedAt(now() - 30.minutes),
-            expiresAt = Claims.ExpiresAt(now() - 15.minutes),
+            issuedAt = Claims.IssuedAt(RoundedInstantProvider.now() - 30.minutes),
+            expiresAt = Claims.ExpiresAt(RoundedInstantProvider.now() - 15.minutes),
         ).shouldBeRight()
 
         persistence.select(inserted2.id).shouldBeSome()
@@ -218,8 +218,8 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
             persistence,
             userId = userId,
             token = Token.Refresh("token"),
-            issuedAt = Claims.IssuedAt(now() - 30.minutes),
-            expiresAt = Claims.ExpiresAt(now() - 15.minutes),
+            issuedAt = Claims.IssuedAt(RoundedInstantProvider.now() - 30.minutes),
+            expiresAt = Claims.ExpiresAt(RoundedInstantProvider.now() - 15.minutes),
         ).shouldBeRight()
 
         persistence.select(inserted2.id).shouldBeSome()

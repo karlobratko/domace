@@ -6,6 +6,20 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
+/**
+ * Executes a given block of code within a new suspended transaction on the IO dispatcher.
+ *
+ * This function is used to perform database operations on the IO dispatcher, which is designed for offloading blocking
+ * IO tasks to shared pool of threads.
+ *
+ * @param db The Database instance on which the transaction is to be performed.
+ * @param block The block of code to be executed within the transaction. This is a suspending function that can be used
+ * to perform suspending database operations.
+ *
+ * @return The result of the block of code executed within the transaction.
+ *
+ * @throws IllegalStateException If this transaction is already completed (commit or rollback is called).
+ */
 suspend fun <T> ioTransaction(
     db: Database,
     block: suspend () -> T

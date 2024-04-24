@@ -7,12 +7,9 @@ import io.github.nefilim.kjwt.JWT.Companion.JWTClaimSetBuilder
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
 
-fun JWTClaimSetBuilder.audience(
-    audience: List<String>,
-    format: StringFormat = Json
-) = audience(format.encodeToString(ListSerializer(String.serializer()), audience))
+fun JWTClaimSetBuilder.audience(audience: List<String>, format: StringFormat) =
+    audience(format.encodeToString(ListSerializer(String.serializer()), audience))
 
 fun JWTClaimSetBuilder.use(value: String) = claim("use", value)
 

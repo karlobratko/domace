@@ -28,6 +28,10 @@ sealed interface SecurityError : DomainError {
 
         data object MissingAudienceClaim : ClaimsValidationError
 
+        data object InvalidAudienceClaim : ClaimsValidationError
+
+        data object EmptyAudienceClaim : ClaimsValidationError
+
         data object MissingUseClaim : ClaimsValidationError
 
         data object UnsupportedUseClaim : ClaimsValidationError
