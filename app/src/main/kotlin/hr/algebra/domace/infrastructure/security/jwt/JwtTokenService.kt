@@ -40,7 +40,7 @@ fun JwtTokenService(
     config: JwtConfig,
     algebra: Tokens,
     refreshTokenPersistence: RefreshTokenPersistence,
-    accessTokenCache: TokenCache
+    accessTokenCache: TokenCache<User.Id>
 ) = object : TokenService {
     override suspend fun generate(userId: User.Id): Either<DomainError, Token.Pair> =
         either {
