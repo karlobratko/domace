@@ -1,7 +1,10 @@
 package hr.algebra.domace.infrastructure.security.jwt
 
+import arrow.core.nel
 import arrow.core.nonEmptyListOf
+import hr.algebra.domace.domain.SecurityError.InvalidRefreshTokenStatus
 import hr.algebra.domace.domain.model.RefreshToken
+import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.security.Claims
 import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.TokenCache
@@ -15,11 +18,13 @@ import hr.algebra.domace.infrastructure.persistence.exposed.insertUser
 import hr.algebra.domace.infrastructure.remoteHost
 import hr.algebra.domace.infrastructure.security.InMemoryTokenCache
 import hr.algebra.domace.infrastructure.security.Secret
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeNone
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.arrow.core.shouldBeSome
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.equals.shouldNotBeEqual
 import io.kotest.matchers.should
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -27,11 +32,13 @@ import io.ktor.util.pipeline.PipelineContext
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.delay
 import org.jetbrains.exposed.sql.SchemaUtils.create
 import org.jetbrains.exposed.sql.SchemaUtils.drop
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private const val REQUEST_REMOTE_HOST = "remote"
 
@@ -55,7 +62,7 @@ object JwtTokenServiceTests : ShouldSpec({
 
     val refreshTokenPersistence = ExposedRefreshTokenPersistence(test)
 
-    lateinit var tokenCache: TokenCache
+    lateinit var tokenCache: TokenCache<User.Id>
 
     lateinit var tokenService: TokenService
 
@@ -181,6 +188,116 @@ object JwtTokenServiceTests : ShouldSpec({
 
         should("userId should be saved to token cache") {
             tokenCache.get(access) shouldBeSome userId
+        }
+    }
+
+    context("successful token refresh") {
+        val userId = insertUser(userPersistence).shouldBeRight().id
+
+        should("user should already be persisted") {
+            userPersistence.select(userId).shouldBeSome()
+        }
+
+        val (refresh, access) = tokenService.generate(userId).shouldBeRight()
+
+        should("refresh token should be persisted") {
+            refreshTokenPersistence.select(refresh).shouldBeSome()
+        }
+
+        // we should wait 1 second since only difference in tokens is time
+        delay(1.seconds)
+
+        val (newRefresh, newAccess) = tokenService.refresh(refresh).shouldBeRight()
+
+        should("refresh token should be rotated and access regenerated") {
+            newRefresh shouldNotBeEqual refresh
+            newAccess shouldNotBeEqual access
+        }
+
+        should("revoke old refresh token and insert new refresh token") {
+            refreshTokenPersistence.select(newRefresh).shouldBeSome()
+            refreshTokenPersistence.select(refresh)
+                .shouldBeSome()
+                .should {
+                    it.status shouldBeEqual RefreshToken.Status.Revoked
+                }
+        }
+    }
+
+    context("revoked token refresh") {
+        val userId = insertUser(userPersistence).shouldBeRight().id
+
+        should("user should already be persisted") {
+            userPersistence.select(userId).shouldBeSome()
+        }
+
+        val (refresh, _) = tokenService.generate(userId).shouldBeRight()
+
+        should("refresh token should be persisted and revoked") {
+            val entity = refreshTokenPersistence.select(refresh).shouldBeSome()
+
+            refreshTokenPersistence.revoke(entity.id).shouldBeRight()
+            refreshTokenPersistence.select(refresh)
+                .shouldBeSome()
+                .should {
+                    it.status shouldBeEqual RefreshToken.Status.Revoked
+                }
+        }
+
+        // we should wait 1 second since only difference in tokens is time
+        delay(1.seconds)
+
+        should("refreshing should result in security error") {
+            tokenService.refresh(refresh) shouldBeLeft InvalidRefreshTokenStatus.nel()
+        }
+    }
+
+    context("successful token revoke") {
+        val userId = insertUser(userPersistence).shouldBeRight().id
+
+        should("user should already be persisted") {
+            userPersistence.select(userId).shouldBeSome()
+        }
+
+        val (refresh, _) = tokenService.generate(userId).shouldBeRight()
+
+        should("refresh token should be persisted") {
+            refreshTokenPersistence.select(refresh).shouldBeSome()
+        }
+
+        val revokedRefresh = tokenService.revoke(refresh).shouldBeRight()
+
+        should("after revoking token should be marked as revoked") {
+            refreshTokenPersistence.select(revokedRefresh)
+                .shouldBeSome()
+                .should {
+                    it.status shouldBeEqual RefreshToken.Status.Revoked
+                }
+        }
+    }
+
+    context("revoking already revoked token") {
+        val userId = insertUser(userPersistence).shouldBeRight().id
+
+        should("user should already be persisted") {
+            userPersistence.select(userId).shouldBeSome()
+        }
+
+        val (refresh, _) = tokenService.generate(userId).shouldBeRight()
+
+        should("refresh token should be persisted and revoked") {
+            val entity = refreshTokenPersistence.select(refresh).shouldBeSome()
+
+            refreshTokenPersistence.revoke(entity.id).shouldBeRight()
+            refreshTokenPersistence.select(refresh)
+                .shouldBeSome()
+                .should {
+                    it.status shouldBeEqual RefreshToken.Status.Revoked
+                }
+        }
+
+        should("revoking should result in security error") {
+            tokenService.revoke(refresh) shouldBeLeft InvalidRefreshTokenStatus.nel()
         }
     }
 })

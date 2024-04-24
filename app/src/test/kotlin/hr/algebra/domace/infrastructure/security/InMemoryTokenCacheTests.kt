@@ -13,7 +13,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
 
     should("put and get Token and User.Id to cache") {
         val lasting = Token.Lasting(15.minutes)
-        val cache = InMemoryTokenCache(lasting)
+        val cache = InMemoryTokenCache<User.Id>(lasting)
 
         cache.put(TOKEN_1, USERID_1)
 
@@ -22,7 +22,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
 
     should("overwrite old User.Id if same Token is put") {
         val lasting = Token.Lasting(15.minutes)
-        val cache = InMemoryTokenCache(lasting)
+        val cache = InMemoryTokenCache<User.Id>(lasting)
 
         cache.put(TOKEN_1, USERID_1)
 
@@ -37,7 +37,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
         val testTimeSource = TestTimeSource()
 
         val lasting = Token.Lasting(15.milliseconds)
-        val cache = InMemoryTokenCache(lasting, timeSource = testTimeSource)
+        val cache = InMemoryTokenCache<User.Id>(lasting, timeSource = testTimeSource)
 
         cache.put(TOKEN_1, USERID_1)
 
@@ -48,7 +48,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
 
     should("revoke token") {
         val lasting = Token.Lasting(15.minutes)
-        val cache = InMemoryTokenCache(lasting)
+        val cache = InMemoryTokenCache<User.Id>(lasting)
 
         cache.put(TOKEN_1, USERID_1)
 
