@@ -58,7 +58,7 @@ inline fun <reified T> Properties.decodeFromStream(stream: InputStream): T =
  *
  * @param deserializer The deserialization strategy to be used for converting the resource file into an object of
  * type T.
- * @param path The path to the resource file. The path should be relative to the resources directory.
+ * @param path The path to the resource file. The path should be relative to the `resources` directory.
  *
  * @return The object of type T obtained by decoding the resource file.
  *
@@ -79,7 +79,7 @@ fun <T> Properties.decodeFromResource(deserializer: DeserializationStrategy<T>, 
  * The default deserialization strategy is obtained by calling `serializersModule.serializer<T>()`.
  * The resource file is loaded into an InputStream, which is then passed to the `decodeFromResource` function.
  *
- * @param path The path to the resource file. The path should be relative to the resources directory.
+ * @param path The path to the resource file. The path should be relative to the `resources` directory.
  *
  * @return The object of type T obtained by decoding the resource file.
  *

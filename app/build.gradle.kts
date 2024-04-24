@@ -25,12 +25,12 @@ application {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(19)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
 kotlin {
-    jvmToolchain(19)
+    jvmToolchain(17)
 }
 
 detekt {
@@ -38,7 +38,7 @@ detekt {
     config.setFrom("$rootDir/config/detekt/detekt.yml")
     buildUponDefaultConfig = true
 
-    // TODO: should probably fix this shit, but for ¯\_(ツ)_/¯ (meh)
+    // TODO: should probably fix this shit, but for now ¯\_(ツ)_/¯ (meh)
     ktlint.ignoreFailures = true
     ktlint.outputToConsole = false
 }
@@ -95,10 +95,7 @@ tasks.register<JavaExec>("runDevelopment") {
     mainClass.set("hr.algebra.domace.infrastructure.ApplicationKt")
     classpath = sourceSets["main"].runtimeClasspath
 
-    jvmArgs(
-        "-Dio.ktor.development=true",
-        "-Dio.netty.tryReflectionSetAccessible=true"
-    )
+    jvmArgs("-Dio.ktor.development=true")
 }
 
 tasks.register("rebuild") {

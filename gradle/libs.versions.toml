@@ -4,7 +4,7 @@ junit-jupiter-engine = "5.10.1"
 kotlinx-coroutines = "1.8.1-Beta"
 kotlinx-serialization = "1.6.3"
 kotlinx-datetime = "0.6.0-RC.2"
-ktor = "2.3.9"
+ktor = "2.3.10"
 hikari = "5.1.0"
 flyway = "10.7.1"
 exposed = "0.46.0"
@@ -30,6 +30,7 @@ kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core",
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-properties = { module = "org.jetbrains.kotlinx:kotlinx-serialization-properties", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-hocon = { module = "org.jetbrains.kotlinx:kotlinx-serialization-hocon", version.ref = "kotlinx-serialization" }
 
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
@@ -53,7 +54,8 @@ ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt-jvm", version.re
 ktor-server-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core-jvm", version.ref = "ktor" }
-ktor-client-apache = { module = "io.ktor:ktor-client-apache-jvm", version.ref = "ktor" }
+ktor-client-jetty = { module = "io.ktor:ktor-client-jetty-jvm", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
@@ -120,7 +122,8 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 [bundles]
 kotlinx-serializations = [
     "kotlinx-serialization-json",
-    "kotlinx-serialization-properties"
+    "kotlinx-serialization-properties",
+    "kotlinx-serialization-hocon"
 ]
 
 ktor-server = [
@@ -146,7 +149,8 @@ ktor-server = [
 
 ktor-client = [
     "ktor-client-core",
-    "ktor-client-apache"
+    "ktor-client-jetty",
+    "ktor-client-content-negotiation"
 ]
 
 flyway = [

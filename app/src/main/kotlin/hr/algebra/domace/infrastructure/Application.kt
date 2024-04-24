@@ -7,7 +7,7 @@ import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
 import hr.algebra.domace.infrastructure.job.DeleteRefreshTokensExpiredFor
 import hr.algebra.domace.infrastructure.job.RevokeExpiredRefreshTokens
 import hr.algebra.domace.infrastructure.job.schedule
-import hr.algebra.domace.infrastructure.persistence.Database.postgres
+import hr.algebra.domace.infrastructure.persistence.Database.dev
 import hr.algebra.domace.infrastructure.persistence.exposed.ExposedRefreshTokenPersistence
 import hr.algebra.domace.infrastructure.plugins.configureHTTP
 import hr.algebra.domace.infrastructure.plugins.configureMonitoring
@@ -23,8 +23,14 @@ import kotlin.time.Duration.Companion.days
 
 fun main(): Unit =
     SuspendApp {
+//        val client = HttpClient(Jetty) {
+//            install(ContentNegotiation) {
+//                json()
+//            }
+//        }
+
         resourceScope {
-            val refreshTokenPersistence = ExposedRefreshTokenPersistence(postgres)
+            val refreshTokenPersistence = ExposedRefreshTokenPersistence(dev.postgres)
 
             server(Netty, port = 8080, host = "localhost") {
                 module()
