@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.domain.security.jwt
 
 import arrow.core.Either
 import arrow.core.EitherNel
@@ -24,20 +24,10 @@ import hr.algebra.domace.domain.security.generateRefreshToken
 import hr.algebra.domace.domain.toEitherNel
 import hr.algebra.domace.domain.validation.ClaimsValidation
 import hr.algebra.domace.domain.validation.RefreshTokenValidation
-import hr.algebra.domace.infrastructure.remoteHost
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
+import hr.algebra.domace.domain.security.Security
 
-data class JwtConfig(
-    val issuer: Claims.Issuer,
-    val refreshLasting: Token.Lasting,
-    val accessLasting: Token.Lasting
-)
-
-context(PipelineContext<Unit, ApplicationCall>)
 fun JwtTokenService(
-    config: JwtConfig,
+    security: Security,
     algebra: Tokens,
     refreshTokenPersistence: RefreshTokenPersistence,
     accessTokenCache: TokenCache<User.Id>
@@ -45,20 +35,26 @@ fun JwtTokenService(
     override suspend fun generate(userId: User.Id): Either<DomainError, Token.Pair> =
         either {
             val subject = with(UserIdToSubjectConversion) { userId.convert() }
-            val audience = Claims.Audience(call.request.remoteHost).nel()
+            val audience = Claims.Audience(userId.value.toString()).nel()
             val issuedAt = Claims.IssuedAt()
 
             with(algebra) {
                 val refreshToken =
-                    Claims.Refresh(config.issuer, subject, audience, issuedAt, config.refreshLasting)
+                    Claims.Refresh(security.issuer, subject, audience, issuedAt, security.refreshLasting)
                         .generateRefreshToken().bind()
 
                 val accessToken =
-                    Claims.Access(config.issuer, subject, audience, issuedAt, config.accessLasting)
+                    Claims.Access(security.issuer, subject, audience, issuedAt, security.accessLasting)
                         .generateAccessToken().bind()
 
-                refreshTokenPersistence.insert(RefreshToken.New(userId, refreshToken, issuedAt, config.refreshLasting))
-                    .bind()
+                refreshTokenPersistence.insert(
+                    RefreshToken.New(
+                        userId,
+                        refreshToken,
+                        issuedAt,
+                        security.refreshLasting
+                    )
+                ).bind()
                 accessTokenCache.put(accessToken, userId)
 
                 Token.Pair(refresh = refreshToken, access = accessToken)

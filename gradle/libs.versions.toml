@@ -17,6 +17,8 @@ suspendapp = "0.4.0"
 kjwt = "0.9.0"
 micrometer = "1.6.3"
 logback = "1.4.14"
+mail = "2.0.3"
+koin = "3.5.6"
 kotest-core = "5.8.0"
 kotest-ktor = "2.0.0"
 kotest-arrow = "1.4.0"
@@ -52,6 +54,7 @@ ktor-server-auto-head-response = { module = "io.ktor:ktor-server-auto-head-respo
 ktor-server-auth = { module = "io.ktor:ktor-server-auth-jvm", version.ref = "ktor" }
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt-jvm", version.ref = "ktor" }
 ktor-server-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-html-builder = { module = "io.ktor:ktor-server-html-builder", version.ref = "ktor" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core-jvm", version.ref = "ktor" }
 ktor-client-jetty = { module = "io.ktor:ktor-client-jetty-jvm", version.ref = "ktor" }
@@ -88,6 +91,14 @@ kjwt = { module = "io.github.nefilim.kjwt:kjwt-core", version.ref = "kjwt" }
 micrometer = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+mail = { module = "org.eclipse.angus:angus-mail", version.ref = "mail" }
+
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-coroutines = { module = "io.insert-koin:koin-core-coroutines" }
+koin-ktor = { module = "io.insert-koin:koin-ktor" }
+koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j" }
 
 test-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter-engine" }
 
@@ -144,7 +155,8 @@ ktor-server = [
     "ktor-server-auto-head-response",
     "ktor-server-auth",
     "ktor-server-auth-jwt",
-    "ktor-server-server-netty"
+    "ktor-server-server-netty",
+    "ktor-server-html-builder"
 ]
 
 ktor-client = [
@@ -180,6 +192,13 @@ suspendapp = [
 kache = [
     "kache-core",
     "kache-file"
+]
+
+koin = [
+    "koin-core",
+    "koin-coroutines",
+    "koin-ktor",
+    "koin-logger-slf4j"
 ]
 
 test-kotest-core = [

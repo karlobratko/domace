@@ -1,6 +1,6 @@
 package hr.algebra.domace.domain.security
 
-import arrow.core.NonEmptyList
+import arrow.core.Nel
 import hr.algebra.domace.domain.config.RoundedInstantProvider
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 sealed interface Claims {
     val issuer: Issuer
     val subject: Subject
-    val audience: NonEmptyList<Audience>
+    val audience: Nel<Audience>
     val use: Use
     val issuedAt: IssuedAt
     val expiresAt: ExpiresAt
@@ -16,7 +16,7 @@ sealed interface Claims {
     data class Refresh(
         override val issuer: Issuer,
         override val subject: Subject,
-        override val audience: NonEmptyList<Audience>,
+        override val audience: Nel<Audience>,
         override val issuedAt: IssuedAt,
         override val expiresAt: ExpiresAt
     ) : Claims {
@@ -25,7 +25,7 @@ sealed interface Claims {
         constructor(
             issuer: Issuer,
             subject: Subject,
-            audience: NonEmptyList<Audience>,
+            audience: Nel<Audience>,
             issuedAt: IssuedAt,
             lasting: Token.Lasting
         ) : this(issuer, subject, audience, issuedAt, ExpiresAt(issuedAt.value + lasting.value))
@@ -34,7 +34,7 @@ sealed interface Claims {
     data class Access(
         override val issuer: Issuer,
         override val subject: Subject,
-        override val audience: NonEmptyList<Audience>,
+        override val audience: Nel<Audience>,
         override val issuedAt: IssuedAt,
         override val expiresAt: ExpiresAt
     ) : Claims {
@@ -43,7 +43,7 @@ sealed interface Claims {
         constructor(
             issuer: Issuer,
             subject: Subject,
-            audience: NonEmptyList<Audience>,
+            audience: Nel<Audience>,
             issuedAt: IssuedAt,
             lasting: Token.Lasting
         ) : this(issuer, subject, audience, issuedAt, ExpiresAt(issuedAt.value + lasting.value))

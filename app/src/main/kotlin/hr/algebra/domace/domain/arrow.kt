@@ -3,7 +3,6 @@ package hr.algebra.domace.domain
 import arrow.core.Either
 import arrow.core.EitherNel
 import arrow.core.Nel
-import arrow.core.NonEmptyList
 import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.left
@@ -119,7 +118,7 @@ inline fun <Error, A> Option<A>.toEitherNel(ifEmpty: () -> Error): EitherNel<Err
  * @throws Error If the iterable is empty, the function raises an error of type `Error`.
  */
 context(Raise<Error>)
-inline fun <Error, A> Iterable<A>.toNonEmptyListOrRaise(error: () -> Error): NonEmptyList<A> =
+inline fun <Error, A> Iterable<A>.toNonEmptyListOrRaise(error: () -> Error): Nel<A> =
     toNonEmptyListOrNone().getOrRaise { error() }
 
 /**

@@ -1,7 +1,6 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.infrastructure.security.kjwt
 
 import arrow.core.nel
-import arrow.core.nonEmptyListOf
 import hr.algebra.domace.domain.SecurityError.InvalidRefreshTokenStatus
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
@@ -15,9 +14,10 @@ import hr.algebra.domace.infrastructure.persistence.exposed.ExposedUserPersisten
 import hr.algebra.domace.infrastructure.persistence.exposed.RefreshTokensTable
 import hr.algebra.domace.infrastructure.persistence.exposed.UsersTable
 import hr.algebra.domace.infrastructure.persistence.exposed.insertUser
-import hr.algebra.domace.infrastructure.remoteHost
 import hr.algebra.domace.infrastructure.security.InMemoryTokenCache
-import hr.algebra.domace.infrastructure.security.Secret
+import hr.algebra.domace.domain.security.Secret
+import hr.algebra.domace.domain.security.Security
+import hr.algebra.domace.domain.security.jwt.JwtTokenService
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeNone
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -26,12 +26,6 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.equals.shouldNotBeEqual
 import io.kotest.matchers.should
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
-import io.ktor.util.pipeline.PipelineContext
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.delay
 import org.jetbrains.exposed.sql.SchemaUtils.create
 import org.jetbrains.exposed.sql.SchemaUtils.drop
@@ -40,17 +34,11 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-private const val REQUEST_REMOTE_HOST = "remote"
-
 object JwtTokenServiceTests : ShouldSpec({
-    val pipelineContext = mockk<PipelineContext<Unit, ApplicationCall>> {
-        every { call.request.remoteHost } answers { REQUEST_REMOTE_HOST }
-    }
-
     val refreshTokenLasting = Token.Lasting(1.days)
     val accessTokenLasting = Token.Lasting(15.minutes)
 
-    val config = JwtConfig(
+    val security = Security(
         Claims.Issuer("domace"),
         refreshTokenLasting,
         accessTokenLasting
@@ -73,14 +61,12 @@ object JwtTokenServiceTests : ShouldSpec({
 
         tokenCache = InMemoryTokenCache(accessTokenLasting)
 
-        with(pipelineContext) {
-            tokenService = JwtTokenService(
-                config,
-                algebra,
-                refreshTokenPersistence,
-                tokenCache
-            )
-        }
+        tokenService = JwtTokenService(
+            security,
+            algebra,
+            refreshTokenPersistence,
+            tokenCache
+        )
     }
 
     afterContainer {
@@ -97,26 +83,6 @@ object JwtTokenServiceTests : ShouldSpec({
         }
 
         val (refresh, access) = tokenService.generate(userId).shouldBeRight()
-
-        should("remote host should be extracted from request and saved to audience claim of tokens") {
-            val expectedAudience = nonEmptyListOf(Claims.Audience(REQUEST_REMOTE_HOST))
-
-            verify(exactly = 1) { pipelineContext.call.request.remoteHost }
-
-            with(algebra) {
-                access.extractClaims()
-                    .shouldBeRight()
-                    .should {
-                        it.audience shouldBeEqual expectedAudience
-                    }
-
-                refresh.extractClaims()
-                    .shouldBeRight()
-                    .should {
-                        it.audience shouldBeEqual expectedAudience
-                    }
-            }
-        }
 
         should("valid expireAt claims should be set based on token lasting configuration") {
             with(algebra) {

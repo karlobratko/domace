@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.infrastructure.security.kjwt
 
 import arrow.core.raise.catch
 import arrow.core.raise.either

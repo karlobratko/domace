@@ -1,8 +1,9 @@
 package hr.algebra.domace.domain
 
 sealed interface DomainError
-
-data object InternalUnhandledError : DomainError
+sealed interface MailingError : DomainError {
+    data object CouldNotSendEmail : MailingError
+}
 
 sealed interface DbError : DomainError {
     data object NothingWasChanged : DbError
@@ -14,6 +15,8 @@ sealed interface DbError : DomainError {
     data object EmailAlreadyExists : DbError
 
     data object InvalidUsernameOrPassword : DbError
+
+    data object UnhandledDbError : DbError
 }
 
 sealed interface SecurityError : DomainError {

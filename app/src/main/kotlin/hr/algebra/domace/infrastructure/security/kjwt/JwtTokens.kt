@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.infrastructure.security.kjwt
 
 import arrow.core.Either
 import arrow.core.EitherNel
@@ -10,9 +10,9 @@ import hr.algebra.domace.domain.SecurityError.ClaimsExtractionError
 import hr.algebra.domace.domain.SecurityError.TokenGenerationError
 import hr.algebra.domace.domain.SecurityError.TokenVerificationError
 import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.Tokens
-import hr.algebra.domace.infrastructure.security.Secret
 import io.github.nefilim.kjwt.JWSHMAC512Algorithm
 import io.github.nefilim.kjwt.JWT
 import io.github.nefilim.kjwt.sign

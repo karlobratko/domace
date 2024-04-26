@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.job
+package hr.algebra.domace.infrastructure.jobs
 
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
 

@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.infrastructure.security.kjwt
 
 import arrow.core.Option
 import io.github.nefilim.kjwt.DecodedJWT

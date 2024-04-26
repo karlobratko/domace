@@ -6,13 +6,14 @@ import arrow.core.Option
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.singleOrNone
+import hr.algebra.domace.domain.DbError
 import hr.algebra.domace.domain.DbError.EmailAlreadyExists
 import hr.algebra.domace.domain.DbError.InvalidUsernameOrPassword
 import hr.algebra.domace.domain.DbError.NothingWasChanged
+import hr.algebra.domace.domain.DbError.UnhandledDbError
 import hr.algebra.domace.domain.DbError.UsernameAlreadyExists
 import hr.algebra.domace.domain.DbError.ValueAlreadyExists
 import hr.algebra.domace.domain.DomainError
-import hr.algebra.domace.domain.InternalUnhandledError
 import hr.algebra.domace.domain.conversion.ConversionScope
 import hr.algebra.domace.domain.getOrRaise
 import hr.algebra.domace.domain.model.User
@@ -64,7 +65,7 @@ fun ExposedUserPersistence(db: Database) = object : UserPersistence {
                             it[passwordHash] = user.password.value
                         }
                     }.mapLeft { err ->
-                        with(ExposedSQLExceptionToDomainErrorConversion) {
+                        with(ExposedSQLExceptionToDbErrorConversion) {
                             err.convert()
                         }
                     }.bind()
@@ -114,7 +115,7 @@ fun ExposedUserPersistence(db: Database) = object : UserPersistence {
                             it[email] = data.email.value
                         }
                     }.mapLeft { err: ExposedSQLException ->
-                        with(ExposedSQLExceptionToDomainErrorConversion) {
+                        with(ExposedSQLExceptionToDbErrorConversion) {
                             err.convert()
                         }
                     }.bind()
@@ -170,9 +171,9 @@ fun ExposedUserPersistence(db: Database) = object : UserPersistence {
         )
 }
 
-private typealias ExposedSQLExceptionToDomainErrorConversionScope = ConversionScope<ExposedSQLException, DomainError>
+private typealias ExposedSQLExceptionToDomainErrorConversionScope = ConversionScope<ExposedSQLException, DbError>
 
-private val ExposedSQLExceptionToDomainErrorConversion = ExposedSQLExceptionToDomainErrorConversionScope {
+private val ExposedSQLExceptionToDbErrorConversion = ExposedSQLExceptionToDomainErrorConversionScope {
     when (sqlState) {
         UniquenessViolation.state -> {
             val message = message?.lowercase() ?: ""
@@ -183,6 +184,6 @@ private val ExposedSQLExceptionToDomainErrorConversion = ExposedSQLExceptionToDo
             }
         }
 
-        else -> InternalUnhandledError
+        else -> UnhandledDbError
     }
 }

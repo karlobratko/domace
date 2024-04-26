@@ -68,6 +68,11 @@ dependencies {
     implementation(libs.micrometer)
     implementation(libs.logback)
 
+    implementation(libs.mail)
+
+    implementation(platform(libs.koin.bom))
+    implementation(libs.bundles.koin)
+
     testImplementation(libs.test.ktor.server)
     testImplementation(libs.test.kotlinx.coroutines)
     testImplementation(libs.bundles.test.kotest.core)

@@ -1,9 +1,9 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.infrastructure.security.kjwt
 
 import arrow.core.nonEmptyListOf
 import hr.algebra.domace.domain.security.Claims
 import hr.algebra.domace.domain.security.generateAccessToken
-import hr.algebra.domace.infrastructure.security.Secret
+import hr.algebra.domace.domain.security.Secret
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.ShouldSpec
 import kotlin.time.Duration.Companion.minutes
