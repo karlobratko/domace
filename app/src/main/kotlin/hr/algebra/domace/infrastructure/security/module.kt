@@ -7,10 +7,13 @@ import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Security
 import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.TokenCache
+import hr.algebra.domace.domain.security.TokenService
 import hr.algebra.domace.domain.security.Tokens
 import hr.algebra.domace.domain.security.jwt.JwtTokenService
-import hr.algebra.domace.infrastructure.security.kjwt.JwtTokens
+import hr.algebra.domace.infrastructure.security.auth.scope.JwtAuthorizationScope
+import hr.algebra.domace.infrastructure.security.jwt.JwtTokens
 import hr.algebra.domace.infrastructure.serialization.Resources
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val SecurityModule =
@@ -49,4 +52,6 @@ val SecurityModule =
                 accessTokenCache = get<TokenCache<User.Id>>()
             )
         }
+
+        single(named("jwt")) { JwtAuthorizationScope(get<TokenService>()) }
     }

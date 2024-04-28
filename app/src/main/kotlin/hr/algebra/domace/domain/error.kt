@@ -53,6 +53,8 @@ sealed interface SecurityError : DomainError {
     data object UnknownToken : SecurityError
 
     data object InvalidRefreshTokenStatus : SecurityError
+
+    data object MissingAuthorizationHeader : SecurityError
 }
 
 sealed interface ConversionError : DomainError {

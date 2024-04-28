@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.security.kjwt
+package hr.algebra.domace.infrastructure.security.jwt
 
 import arrow.core.Either.Companion.catch
 import arrow.core.flatMap
