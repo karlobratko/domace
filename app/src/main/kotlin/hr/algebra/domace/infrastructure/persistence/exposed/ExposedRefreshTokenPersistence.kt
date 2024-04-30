@@ -21,12 +21,14 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ReferenceOption.CASCADE
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import kotlin.time.Duration
 
@@ -39,6 +41,12 @@ object RefreshTokensTable : LongIdTable("refresh_tokens", "refresh_token_pk") {
 }
 
 fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersistence {
+    init {
+        transaction {
+            SchemaUtils.create(RefreshTokensTable)
+        }
+    }
+
     override suspend fun insert(refreshToken: RefreshToken.New): Either<DomainError, RefreshToken.Entity> =
         ioTransaction(db) {
             val id = RefreshTokensTable.insertAndGetId {

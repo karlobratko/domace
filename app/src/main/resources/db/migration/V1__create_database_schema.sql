@@ -4,7 +4,8 @@ CREATE TABLE users
     username          VARCHAR(50)              NOT NULL UNIQUE,
     email             VARCHAR(256)             NOT NULL UNIQUE,
     password_hash     VARCHAR(256)             NOT NULL,
-    registration_date TIMESTAMP WITH TIME ZONE NOT NULL
+    registration_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    role              SMALLINT                 NOT NULL
 );
 
 CREATE TABLE refresh_tokens

@@ -279,7 +279,7 @@ suspend fun insertUser(
     password: User.Password = VALID_PASSWORD_1
 ): Either<DomainError, User.Entity> {
     val user = with(UsernameValidation, EmailValidation, PasswordValidation) {
-        User.New(username, email, password)
+        User.New(username, email, password, User.Role.Admin)
     }.shouldBeRight()
 
     return persistence.insert(user)

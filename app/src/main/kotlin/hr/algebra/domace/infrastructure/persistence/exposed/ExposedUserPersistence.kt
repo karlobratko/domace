@@ -26,12 +26,14 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentTimestamp
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import org.postgresql.util.PSQLState.UNIQUE_VIOLATION as UniquenessViolation
 import org.springframework.security.crypto.bcrypt.BCrypt.checkpw as checkPassword
@@ -51,9 +53,16 @@ object UsersTable : LongIdTable("users", "user_pk") {
         Encryptor({ hashPassword(it, generateSalt()) }, { it }, { it })
     )
     val registrationDate = timestampWithTimeZone("registration_date").defaultExpression(CurrentTimestamp())
+    val role = enumeration<User.Role>("role")
 }
 
 fun ExposedUserPersistence(db: Database) = object : UserPersistence {
+    init {
+        transaction {
+            SchemaUtils.create(UsersTable)
+        }
+    }
+
     override suspend fun insert(user: User.New): Either<DomainError, User.Entity> =
         ioTransaction(db) {
             either {
@@ -63,6 +72,7 @@ fun ExposedUserPersistence(db: Database) = object : UserPersistence {
                             it[username] = user.username.value
                             it[email] = user.email.value
                             it[passwordHash] = user.password.value
+                            it[role] = user.role
                         }
                     }.mapLeft { err ->
                         with(ExposedSQLExceptionToDbErrorConversion) {
@@ -167,7 +177,8 @@ fun ExposedUserPersistence(db: Database) = object : UserPersistence {
             User.Username(this[UsersTable.username]),
             User.Email(this[UsersTable.email]),
             User.PasswordHash(this[UsersTable.passwordHash]),
-            User.RegistrationDate(this[UsersTable.registrationDate].toInstant().toKotlinInstant())
+            User.RegistrationDate(this[UsersTable.registrationDate].toInstant().toKotlinInstant()),
+            this[UsersTable.role]
         )
 }
 

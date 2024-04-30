@@ -1,10 +1,16 @@
-package hr.algebra.domace.infrastructure
+package hr.algebra.domace.infrastructure.ktor
 
+import arrow.core.Option
+import arrow.core.Option.Companion.catch
+import arrow.core.none
+import arrow.core.toOption
 import io.ktor.http.HttpHeaders
 import io.ktor.http.auth.HttpAuthHeader
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.parseAuthorizationHeader
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.request.receiveNullable
 
 /**
  * Extension property for the ApplicationRequest class.
@@ -38,3 +44,18 @@ val ApplicationRequest.remoteHost
  */
 val ApplicationRequest.authHeaderBlob
     get(): String? = (parseAuthorizationHeader() as? HttpAuthHeader.Single)?.blob
+
+/**
+ * Extension function for the ApplicationCall class.
+ *
+ * This function provides a way to receive a nullable object of a specified type from the request.
+ * It uses the inline and reified keywords to allow the type of the object to be specified at the call site.
+ * The function first tries to receive a nullable object of the specified type from the request.
+ * If the reception is successful, it wraps the object in an Option and returns it.
+ * If the reception fails (for example, if the request does not contain an object of the specified type),
+ * it returns None.
+ *
+ * @return An Option containing the received object if the reception is successful, None otherwise.
+ */
+suspend inline fun <reified T> ApplicationCall.receiveOrNone(): Option<T> =
+    catch { receiveNullable<T>() }.fold(ifEmpty = { none() }, ifSome = { it.toOption() })

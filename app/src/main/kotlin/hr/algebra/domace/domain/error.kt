@@ -5,6 +5,8 @@ sealed interface MailingError : DomainError {
     data object CouldNotSendEmail : MailingError
 }
 
+data object RequestBodyCouldNotBeParsed : DomainError
+
 sealed interface DbError : DomainError {
     data object NothingWasChanged : DbError
 
@@ -54,7 +56,14 @@ sealed interface SecurityError : DomainError {
 
     data object InvalidRefreshTokenStatus : SecurityError
 
-    data object MissingAuthorizationHeader : SecurityError
+    sealed interface AuthenticationError : SecurityError {
+        data object MissingAuthorizationHeader : SecurityError
+    }
+
+    sealed interface AuthorizationError : SecurityError {
+        data object UnknownSubjectResourceAccess : SecurityError
+        data object UnauthorizedResourceAccess : SecurityError
+    }
 }
 
 sealed interface ConversionError : DomainError {

@@ -1,8 +1,8 @@
-package hr.algebra.domace.infrastructure.security.auth.scope
+package hr.algebra.domace.infrastructure.security.authentication.scope
 
 import arrow.core.EitherNel
 import hr.algebra.domace.domain.DomainError
-import hr.algebra.domace.infrastructure.security.auth.AuthorizationContext
+import hr.algebra.domace.infrastructure.security.authentication.AuthenticationContext
 import io.ktor.server.request.ApplicationRequest
 
 /**
@@ -14,7 +14,7 @@ import io.ktor.server.request.ApplicationRequest
  * This object represents a value which is either a non-empty list of DomainError objects, or an AuthorizationContext.
  * This is used to handle errors in a functional way.
  */
-fun interface AuthorizationScope {
+fun interface AuthenticationScope {
     /**
      * Suspends function that authorizes an ApplicationRequest.
      *
@@ -22,5 +22,5 @@ fun interface AuthorizationScope {
      * @return Either a non-empty list of DomainError objects if the authorization failed, or an AuthorizationContext
      * if it succeeded.
      */
-    suspend fun ApplicationRequest.authorize(): EitherNel<DomainError, AuthorizationContext>
+    suspend fun ApplicationRequest.authenticate(): EitherNel<DomainError, AuthenticationContext>
 }

@@ -10,20 +10,25 @@ import hr.algebra.domace.domain.zipOrAccumulateMerging
 import kotlinx.datetime.Instant
 
 sealed interface User {
-    class New private constructor(val username: Username, val email: Email, val password: Password) : User {
+    class New private constructor(
+        val username: Username,
+        val email: Email,
+        val password: Password,
+        val role: Role
+    ) : User {
         companion object {
             context(UsernameValidationScope, EmailValidationScope, PasswordValidationScope)
             operator fun invoke(
                 username: Username,
                 email: Email,
-                password: Password
+                password: Password,
+                role: Role
             ): EitherNel<UserValidationError, New> =
-                zipOrAccumulateMerging(
+                getOrAccumulateMerging(
                     { username.validate() },
                     { email.validate() },
-                    { password.validate() },
-                    User::New
-                )
+                    { password.validate() }
+                ) { New(username, email, password, role) }
         }
     }
 
@@ -68,7 +73,8 @@ sealed interface User {
         val username: Username,
         val email: Email,
         val passwordHash: PasswordHash,
-        val registrationDate: RegistrationDate
+        val registrationDate: RegistrationDate,
+        val role: Role
     ) : User
 
     @JvmInline value class Id(val value: Long)
@@ -82,4 +88,11 @@ sealed interface User {
     @JvmInline value class PasswordHash(val value: String)
 
     @JvmInline value class RegistrationDate(val value: Instant)
+
+    enum class Role {
+        Admin,
+        Agronomist,
+        Agriculturist,
+        Customer
+    }
 }

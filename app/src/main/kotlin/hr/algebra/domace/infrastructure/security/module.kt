@@ -2,6 +2,7 @@ package hr.algebra.domace.infrastructure.security
 
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
+import hr.algebra.domace.domain.persistence.UserPersistence
 import hr.algebra.domace.domain.security.Claims
 import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Security
@@ -10,7 +11,7 @@ import hr.algebra.domace.domain.security.TokenCache
 import hr.algebra.domace.domain.security.TokenService
 import hr.algebra.domace.domain.security.Tokens
 import hr.algebra.domace.domain.security.jwt.JwtTokenService
-import hr.algebra.domace.infrastructure.security.auth.scope.JwtAuthorizationScope
+import hr.algebra.domace.infrastructure.security.authentication.scope.JwtAuthorizationScope
 import hr.algebra.domace.infrastructure.security.jwt.JwtTokens
 import hr.algebra.domace.infrastructure.serialization.Resources
 import org.koin.core.qualifier.named
@@ -53,5 +54,5 @@ val SecurityModule =
             )
         }
 
-        single(named("jwt")) { JwtAuthorizationScope(get<TokenService>()) }
+        single(named("jwt")) { JwtAuthorizationScope(get<TokenService>(), get<UserPersistence>()) }
     }
