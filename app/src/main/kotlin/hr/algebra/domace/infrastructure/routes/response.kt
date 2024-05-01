@@ -1,8 +1,18 @@
 package hr.algebra.domace.infrastructure.routes
 
+import arrow.core.Either
+import arrow.core.EitherNel
 import arrow.core.Nel
 import arrow.core.toNonEmptyListOrNull
+import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.config.DefaultInstantProvider
+import hr.algebra.domace.domain.conversion.ConversionScope
+import hr.algebra.domace.infrastructure.errors.NelErrorToHttpStatusCodeConversion
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.call
+import io.ktor.server.response.respond
+import io.ktor.util.pipeline.PipelineContext
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -27,6 +37,8 @@ sealed class Response<out A> {
      */
     val timestamp = DefaultInstantProvider.now().toEpochMilliseconds()
 
+    abstract val code: HttpStatusCode
+
     /**
      * A data class representing a successful response.
      * This class is a subtype of Response.
@@ -34,7 +46,7 @@ sealed class Response<out A> {
      * @param A The type of the data in the response.
      * @property data The data in the response.
      */
-    data class Success<out A> private constructor(val data: A) : Response<A>() {
+    data class Success<out A> private constructor(val data: A, override val code: HttpStatusCode) : Response<A>() {
         companion object {
             /**
              * A function to create a new Success object cast as Response<A> for serialization purposes.
@@ -42,7 +54,7 @@ sealed class Response<out A> {
              * @param data The data in the response.
              * @return A new Success object with the given data.
              */
-            operator fun <A> invoke(data: A): Response<A> = Success(data)
+            operator fun <A> invoke(data: A, code: HttpStatusCode): Response<A> = Success(data, code)
         }
     }
 
@@ -52,7 +64,10 @@ sealed class Response<out A> {
      *
      * @property errors The non-empty list of error messages.
      */
-    data class Failure private constructor(val errors: Nel<String>) : Response<Nothing>() {
+    data class Failure private constructor(
+        val errors: Nel<String>,
+        override val code: HttpStatusCode
+    ) : Response<Nothing>() {
         companion object {
             /**
              * A function to create a new Failure object cast as Response<Nothing> for serialization purposes.
@@ -60,10 +75,59 @@ sealed class Response<out A> {
              * @param errors The non-empty list of error messages.
              * @return A new Failure object with the given error messages.
              */
-            operator fun invoke(errors: Nel<String>): Response<Nothing> = Failure(errors)
+            operator fun invoke(errors: Nel<String>, code: HttpStatusCode): Response<Nothing> = Failure(errors, code)
         }
     }
 }
+
+/**
+ * Extension function on EitherNel<DomainError, A> to convert it into a Response.
+ * This function uses the NelErrorToHttpStatusCodeConversion to convert the DomainError into an HttpStatusCode.
+ *
+ * @param onSuccessStatusCode The HttpStatusCode to use if the Either is a Right.
+ * @return A Response object.
+ */
+fun <A> EitherNel<DomainError, A>.toResponse(
+    onSuccessStatusCode: HttpStatusCode
+) = toResponse(NelErrorToHttpStatusCodeConversion, onSuccessStatusCode)
+
+/**
+ * Extension function on EitherNel<Error, A> to convert it into a Response.
+ * This function uses a provided ConversionScope to convert the Error into an HttpStatusCode.
+ *
+ * @param onErrorConversionScope The ConversionScope to use to convert the Error into an HttpStatusCode.
+ * @param onSuccessStatusCode The HttpStatusCode to use if the Either is a Right.
+ * @return A Response object.
+ */
+fun <Error, A> EitherNel<Error, A>.toResponse(
+    onErrorConversionScope: ConversionScope<Nel<Error>, HttpStatusCode>,
+    onSuccessStatusCode: HttpStatusCode
+) = toResponse({ with(onErrorConversionScope) { it.convert() } }, onSuccessStatusCode)
+
+/**
+ * Extension function on EitherNel<Error, A> to convert it into a Response.
+ * This function uses a provided function to convert the Error into an HttpStatusCode.
+ *
+ * @param onErrorMapper The function to use to convert the Error into an HttpStatusCode.
+ * @param onSuccessStatusCode The HttpStatusCode to use if the Either is a Right.
+ * @return A Response object.
+ */
+fun <Error, A> EitherNel<Error, A>.toResponse(
+    onErrorMapper: (Nel<Error>) -> HttpStatusCode,
+    onSuccessStatusCode: HttpStatusCode
+) = when (this) {
+    is Either.Left -> Response.Failure(value.map { it.toString() }, onErrorMapper.invoke(value))
+    is Either.Right -> Response.Success(value, onSuccessStatusCode)
+}
+
+/**
+ * Extension function on PipelineContext<Unit, ApplicationCall> to respond with a Response.
+ * This function uses the Ktor respond function to send the Response to the client.
+ *
+ * @return Unit.
+ */
+context(PipelineContext<Unit, ApplicationCall>)
+suspend fun <A> Response<A>.respond(): Unit = call.respond(code, this)
 
 private class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<Response<A>> {
 
@@ -72,6 +136,7 @@ private class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<R
     @OptIn(ExperimentalSerializationApi::class)
     data class ResponseSurrogate<A>(
         val status: Status,
+        val code: Int,
         val timestamp: Long,
         @EncodeDefault(mode = Never) val data: A? = null,
         @EncodeDefault(mode = Never) val errors: List<String>? = null
@@ -94,14 +159,17 @@ private class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<R
         return when (surrogate.status) {
             ResponseSurrogate.Status.Success ->
                 if (surrogate.data != null) {
-                    Response.Success(surrogate.data)
+                    Response.Success(surrogate.data, HttpStatusCode.fromValue(surrogate.code))
                 } else {
                     throw SerializationException("Missing data for successful result.")
                 }
 
             ResponseSurrogate.Status.Failure ->
                 if (!surrogate.errors.isNullOrEmpty()) {
-                    Response.Failure(surrogate.errors.toNonEmptyListOrNull()!!)
+                    Response.Failure(
+                        surrogate.errors.toNonEmptyListOrNull()!!,
+                        HttpStatusCode.fromValue(surrogate.code)
+                    )
                 } else {
                     throw SerializationException("Missing errors for failing result.")
                 }
@@ -112,12 +180,14 @@ private class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<R
         val surrogate = when (value) {
             is Response.Success -> ResponseSurrogate(
                 ResponseSurrogate.Status.Success,
+                code = value.code.value,
                 timestamp = value.timestamp,
                 data = value.data
             )
 
             is Response.Failure -> ResponseSurrogate(
                 ResponseSurrogate.Status.Failure,
+                code = value.code.value,
                 timestamp = value.timestamp,
                 errors = value.errors
             )

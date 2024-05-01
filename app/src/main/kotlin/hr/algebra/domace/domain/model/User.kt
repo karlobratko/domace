@@ -5,6 +5,7 @@ import hr.algebra.domace.domain.ValidationError.UserValidationError
 import hr.algebra.domace.domain.getOrAccumulateMerging
 import hr.algebra.domace.domain.validation.EmailValidationScope
 import hr.algebra.domace.domain.validation.PasswordValidationScope
+import hr.algebra.domace.domain.validation.RoleValidationScope
 import hr.algebra.domace.domain.validation.UsernameValidationScope
 import hr.algebra.domace.domain.zipOrAccumulateMerging
 import kotlinx.datetime.Instant
@@ -17,18 +18,20 @@ sealed interface User {
         val role: Role
     ) : User {
         companion object {
-            context(UsernameValidationScope, EmailValidationScope, PasswordValidationScope)
+            context(UsernameValidationScope, EmailValidationScope, PasswordValidationScope, RoleValidationScope)
             operator fun invoke(
                 username: Username,
                 email: Email,
                 password: Password,
                 role: Role
             ): EitherNel<UserValidationError, New> =
-                getOrAccumulateMerging(
+                zipOrAccumulateMerging(
                     { username.validate() },
                     { email.validate() },
-                    { password.validate() }
-                ) { New(username, email, password, role) }
+                    { password.validate() },
+                    { role.validate() },
+                    User::New
+                )
         }
     }
 

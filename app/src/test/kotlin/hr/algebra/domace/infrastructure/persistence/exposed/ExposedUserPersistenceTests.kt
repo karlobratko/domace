@@ -10,6 +10,7 @@ import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.UserPersistence
 import hr.algebra.domace.domain.validation.EmailValidation
 import hr.algebra.domace.domain.validation.PasswordValidation
+import hr.algebra.domace.domain.validation.RoleValidation
 import hr.algebra.domace.domain.validation.UsernameValidation
 import hr.algebra.domace.domain.with
 import hr.algebra.domace.infrastructure.persistence.Database.test
@@ -278,8 +279,8 @@ suspend fun insertUser(
     email: User.Email = VALID_EMAIL_1,
     password: User.Password = VALID_PASSWORD_1
 ): Either<DomainError, User.Entity> {
-    val user = with(UsernameValidation, EmailValidation, PasswordValidation) {
-        User.New(username, email, password, User.Role.Admin)
+    val user = with(UsernameValidation, EmailValidation, PasswordValidation, RoleValidation) {
+        User.New(username, email, password, User.Role.Agronomist)
     }.shouldBeRight()
 
     return persistence.insert(user)

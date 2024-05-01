@@ -10,6 +10,7 @@ import arrow.core.nel
 import arrow.core.raise.Raise
 import arrow.core.raise.RaiseAccumulate
 import arrow.core.raise.either
+import arrow.core.raise.fold
 import arrow.core.right
 import arrow.core.toNonEmptyListOrNone
 import arrow.core.toOption
@@ -17,6 +18,23 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.experimental.ExperimentalTypeInference
 import kotlin.contracts.InvocationKind.AT_MOST_ONCE as AtMostOnce
+
+/**
+ * This function is an inline function that takes a block of code and wraps it in an `EitherNel` type.
+ * `EitherNel` is a type from the Arrow library that represents a value of one of two possible types (a disjoint union).
+ * An instance of `EitherNel` is either an instance of `Left` or `Right`.
+ * The function invokes the block of code within a `Raise` context. If the block of code raises an error, the function
+ * will return a `Left` containing the error. If the block of code completes successfully, the function will return a
+ * `Right` containing the result.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the result of the block of code.
+ * @param block The block of code to be invoked. This block is invoked within a `Raise` context.
+ * @return An `EitherNel` containing either the error raised by the block of code (Either.Left), or the result of the
+ * block of code (Either.Right).
+ */
+inline fun <Error, A> eitherNel(block: Raise<Nel<Error>>.() -> A): EitherNel<Error, A> =
+    fold({ block.invoke(this) }, { Either.Left(it) }, { Either.Right(it) })
 
 /**
  * This function is an extension function for the List class. It attempts to convert the list to a NonEmptyList (Nel).

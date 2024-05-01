@@ -1,13 +1,13 @@
 package hr.algebra.domace.infrastructure.ktor
 
 import hr.algebra.domace.infrastructure.routes.Response
+import hr.algebra.domace.infrastructure.routes.respond
 import hr.algebra.domace.infrastructure.security.authentication.AuthenticationContext
 import hr.algebra.domace.infrastructure.security.authentication.scope.AuthenticationScope
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.request.ApplicationRequest
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -491,10 +491,7 @@ suspend fun ApplicationRequest.authenticate(
         this@authenticate.authenticate()
             .onRight { context -> body(this@PipelineContext, context) }
             .onLeft { errors ->
-                call.respond(
-                    HttpStatusCode.Unauthorized,
-                    Response.Failure(errors.map { it.toString() })
-                )
+                Response.Failure(errors.map { it.toString() }, HttpStatusCode.Unauthorized).respond()
             }
     }
 }

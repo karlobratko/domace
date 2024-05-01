@@ -1,6 +1,7 @@
 package hr.algebra.domace.domain
 
 sealed interface DomainError
+
 sealed interface MailingError : DomainError {
     data object CouldNotSendEmail : MailingError
 }
@@ -57,12 +58,12 @@ sealed interface SecurityError : DomainError {
     data object InvalidRefreshTokenStatus : SecurityError
 
     sealed interface AuthenticationError : SecurityError {
-        data object MissingAuthorizationHeader : SecurityError
+        data object MissingAuthorizationHeader : AuthenticationError
     }
 
     sealed interface AuthorizationError : SecurityError {
-        data object UnknownSubjectResourceAccess : SecurityError
-        data object UnauthorizedResourceAccess : SecurityError
+        data object UnknownSubjectResourceAccess : AuthorizationError
+        data object UnauthorizedResourceAccess : AuthorizationError
     }
 }
 
@@ -96,6 +97,10 @@ sealed interface ValidationError : DomainError {
             data object NoUppercaseCharsInPassword : PasswordValidationError
 
             data object NoSpecialCharsInPassword : PasswordValidationError
+        }
+
+        sealed interface RoleValidationError : UserValidationError {
+            data object AdminCanNotBeCreated : RoleValidationError
         }
     }
 }

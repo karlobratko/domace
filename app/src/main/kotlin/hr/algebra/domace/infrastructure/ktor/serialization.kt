@@ -3,10 +3,10 @@ package hr.algebra.domace.infrastructure.ktor
 import hr.algebra.domace.domain.RequestBodyCouldNotBeParsed
 import hr.algebra.domace.domain.toEitherNel
 import hr.algebra.domace.infrastructure.routes.Response
+import hr.algebra.domace.infrastructure.routes.respond
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
-import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -126,9 +126,6 @@ suspend inline fun <reified T> ApplicationCall.receive(
     this@receive.receiveOrNone<T>().toEitherNel { RequestBodyCouldNotBeParsed }
         .onRight { body(this@PipelineContext, it) }
         .onLeft { errors ->
-            call.respond(
-                HttpStatusCode.BadRequest,
-                Response.Failure(errors.map { it.toString() })
-            )
+            Response.Failure(errors.map { it.toString() }, HttpStatusCode.Unauthorized).respond()
         }
 }
