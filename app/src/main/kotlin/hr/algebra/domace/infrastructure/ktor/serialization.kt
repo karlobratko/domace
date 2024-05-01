@@ -2,9 +2,8 @@ package hr.algebra.domace.infrastructure.ktor
 
 import hr.algebra.domace.domain.RequestBodyCouldNotBeParsed
 import hr.algebra.domace.domain.toEitherNel
-import hr.algebra.domace.infrastructure.routes.Response
 import hr.algebra.domace.infrastructure.routes.respond
-import io.ktor.http.HttpStatusCode
+import hr.algebra.domace.infrastructure.routes.toFailure
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.routing.Route
@@ -125,7 +124,5 @@ suspend inline fun <reified T> ApplicationCall.receive(
 ) {
     this@receive.receiveOrNone<T>().toEitherNel { RequestBodyCouldNotBeParsed }
         .onRight { body(this@PipelineContext, it) }
-        .onLeft { errors ->
-            Response.Failure(errors.map { it.toString() }, HttpStatusCode.Unauthorized).respond()
-        }
+        .onLeft { errors -> errors.toFailure().respond() }
 }

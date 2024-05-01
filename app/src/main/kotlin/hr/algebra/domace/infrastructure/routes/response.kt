@@ -81,6 +81,43 @@ sealed class Response<out A> {
 }
 
 /**
+ * Extension function on NonEmptyList of DomainError to convert it into a Failure Response.
+ * This function uses the NelErrorToHttpStatusCodeConversion to convert the DomainError into an HttpStatusCode.
+ *
+ * @return A Failure Response object.
+ */
+fun Nel<DomainError>.toFailure() = toFailure(NelErrorToHttpStatusCodeConversion)
+
+/**
+ * Extension function on NonEmptyList of Error to convert it into a Failure Response.
+ * This function uses a provided HttpStatusCode to create a Failure Response.
+ *
+ * @param statusCode The HttpStatusCode to use for the Failure Response.
+ * @return A Failure Response object.
+ */
+fun <Error> Nel<Error>.toFailure(statusCode: HttpStatusCode) = toFailure { statusCode }
+
+/**
+ * Extension function on NonEmptyList of Error to convert it into a Failure Response.
+ * This function uses a provided ConversionScope to convert the Error into an HttpStatusCode.
+ *
+ * @param onErrorConversionScope The ConversionScope to use to convert the Error into an HttpStatusCode.
+ * @return A Failure Response object.
+ */
+fun <Error> Nel<Error>.toFailure(onErrorConversionScope: ConversionScope<Nel<Error>, HttpStatusCode>) =
+    toFailure { with(onErrorConversionScope) { it.convert() } }
+
+/**
+ * Extension function on NonEmptyList of Error to convert it into a Failure Response.
+ * This function uses a provided function to convert the Error into an HttpStatusCode.
+ *
+ * @param onErrorMapper The function to use to convert the Error into an HttpStatusCode.
+ * @return A Failure Response object.
+ */
+fun <Error> Nel<Error>.toFailure(onErrorMapper: (Nel<Error>) -> HttpStatusCode) =
+    Response.Failure(map { it.toString() }, onErrorMapper.invoke(this))
+
+/**
  * Extension function on EitherNel<DomainError, A> to convert it into a Response.
  * This function uses the NelErrorToHttpStatusCodeConversion to convert the DomainError into an HttpStatusCode.
  *
@@ -116,7 +153,7 @@ fun <Error, A> EitherNel<Error, A>.toResponse(
     onErrorMapper: (Nel<Error>) -> HttpStatusCode,
     onSuccessStatusCode: HttpStatusCode
 ) = when (this) {
-    is Either.Left -> Response.Failure(value.map { it.toString() }, onErrorMapper.invoke(value))
+    is Either.Left -> value.toFailure(onErrorMapper)
     is Either.Right -> Response.Success(value, onSuccessStatusCode)
 }
 

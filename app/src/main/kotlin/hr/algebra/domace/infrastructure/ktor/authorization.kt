@@ -1,11 +1,10 @@
 package hr.algebra.domace.infrastructure.ktor
 
-import hr.algebra.domace.infrastructure.routes.Response
 import hr.algebra.domace.infrastructure.routes.respond
+import hr.algebra.domace.infrastructure.routes.toFailure
 import hr.algebra.domace.infrastructure.security.authentication.AuthenticationContext
 import hr.algebra.domace.infrastructure.security.authentication.scope.AuthenticationScope
 import hr.algebra.domace.infrastructure.security.authorization.scope.AuthorizationScope
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.routing.Route
@@ -526,8 +525,6 @@ suspend fun AuthenticationContext.authorize(
     with(authorizationScope) {
         this@authorize.authorize()
             .onRight { context -> body(this@PipelineContext, context) }
-            .onLeft { errors ->
-                Response.Failure(errors.map { it.toString() }, HttpStatusCode.Forbidden).respond()
-            }
+            .onLeft { errors -> errors.toFailure().respond() }
     }
 }
