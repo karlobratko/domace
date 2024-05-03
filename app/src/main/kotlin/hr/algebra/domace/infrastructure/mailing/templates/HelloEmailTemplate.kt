@@ -1,9 +1,8 @@
-package hr.algebra.domace.domain.mailing
+package hr.algebra.domace.infrastructure.mailing.templates
 
 import arrow.core.nel
-import hr.algebra.domace.domain.mailing.Email.Content.Html
-import hr.algebra.domace.domain.mailing.Email.Participant
-import hr.algebra.domace.domain.mailing.Email.Subject
+import hr.algebra.domace.domain.mailing.Email
+import hr.algebra.domace.domain.mailing.EmailTemplate
 import kotlinx.html.body
 import kotlinx.html.div
 import kotlinx.html.h1
@@ -13,16 +12,12 @@ import kotlinx.html.meta
 import kotlinx.html.p
 import kotlinx.html.stream.createHTML
 
-fun interface EmailTemplate {
-    fun email(): Email
-}
-
-fun HelloEmailTemplate(from: Participant, to: Participant) = EmailTemplate {
+fun HelloEmailTemplate(from: Email.Participant, to: Email.Participant) = EmailTemplate {
     Email(
         from = from,
         to = to.nel(),
-        subject = Subject("Test Mail"),
-        content = Html(
+        subject = Email.Subject("Test Mail"),
+        content = Email.Content.Html(
             value = createHTML()
                 .html {
                     head {

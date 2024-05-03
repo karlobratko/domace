@@ -2,7 +2,8 @@ package hr.algebra.domace.infrastructure.security
 
 import hr.algebra.domace.domain.TestTimeSource
 import hr.algebra.domace.domain.model.User
-import hr.algebra.domace.domain.security.Token
+import hr.algebra.domace.domain.security.jwt.Token
+import hr.algebra.domace.infrastructure.security.jwt.InMemoryTokenCache
 import io.kotest.assertions.arrow.core.shouldBeNone
 import io.kotest.assertions.arrow.core.shouldBeSome
 import io.kotest.core.spec.style.ShouldSpec
@@ -11,7 +12,7 @@ import kotlin.time.Duration.Companion.minutes
 
 object InMemoryTokenCacheTests : ShouldSpec({
 
-    should("put and get Token and User.Id to cache") {
+    should("put and get Token and value to cache") {
         val lasting = Token.Lasting(15.minutes)
         val cache = InMemoryTokenCache<User.Id>(lasting)
 
@@ -20,7 +21,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
         cache.get(TOKEN_1) shouldBeSome USERID_1
     }
 
-    should("overwrite old User.Id if same Token is put") {
+    should("overwrite old value if same Token is put") {
         val lasting = Token.Lasting(15.minutes)
         val cache = InMemoryTokenCache<User.Id>(lasting)
 

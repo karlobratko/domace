@@ -45,6 +45,10 @@ sealed interface SecurityError : DomainError {
         data object MissingIssuedAtClaim : ClaimsValidationError
 
         data object MissingExpiresAtClaim : ClaimsValidationError
+
+        data object MissingRoleClaim : ClaimsValidationError
+
+        data object UnsupportedRoleClaim : ClaimsValidationError
     }
 
     data object ClaimsExtractionError : SecurityError

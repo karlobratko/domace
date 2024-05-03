@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.security
+package hr.algebra.domace.infrastructure.security.jwt
 
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration

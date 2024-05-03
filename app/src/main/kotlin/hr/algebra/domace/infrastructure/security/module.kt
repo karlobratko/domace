@@ -1,18 +1,20 @@
 package hr.algebra.domace.infrastructure.security
 
-import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
-import hr.algebra.domace.domain.persistence.UserPersistence
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.AuthContext
 import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Security
-import hr.algebra.domace.domain.security.Token
-import hr.algebra.domace.domain.security.TokenCache
-import hr.algebra.domace.domain.security.TokenService
-import hr.algebra.domace.domain.security.Tokens
+import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.domain.security.jwt.JwtTokenService
-import hr.algebra.domace.infrastructure.security.authentication.scope.JwtAuthorizationScope
+import hr.algebra.domace.domain.security.jwt.Token
+import hr.algebra.domace.domain.security.jwt.TokenCache
+import hr.algebra.domace.domain.security.jwt.TokenService
+import hr.algebra.domace.domain.security.jwt.Tokens
+import hr.algebra.domace.infrastructure.security.authentication.JwtAuthorizationScope
+import hr.algebra.domace.infrastructure.security.jwt.InMemoryTokenCache
 import hr.algebra.domace.infrastructure.security.jwt.JwtTokens
+import hr.algebra.domace.infrastructure.security.jwt.SecurityConfig
+import hr.algebra.domace.infrastructure.security.jwt.SecuritySecretConfig
 import hr.algebra.domace.infrastructure.serialization.Resources
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -38,7 +40,7 @@ val SecurityModule =
         }
 
         single {
-            InMemoryTokenCache<User.Id>(
+            InMemoryTokenCache<AuthContext>(
                 expireAfter = get<Security>().accessLasting
             )
         }
@@ -50,9 +52,9 @@ val SecurityModule =
                 security = get<Security>(),
                 algebra = get<Tokens>(),
                 refreshTokenPersistence = get<RefreshTokenPersistence>(),
-                accessTokenCache = get<TokenCache<User.Id>>()
+                accessTokenCache = get<TokenCache<AuthContext>>()
             )
         }
 
-        single(named("jwt")) { JwtAuthorizationScope(get<TokenService>(), get<UserPersistence>()) }
+        single(named("jwt")) { JwtAuthorizationScope(get<TokenService>()) }
     }

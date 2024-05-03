@@ -1,8 +1,8 @@
-package hr.algebra.domace.infrastructure.security.authorization.scope
+package hr.algebra.domace.domain.security.authorization
 
 import arrow.core.EitherNel
 import hr.algebra.domace.domain.DomainError
-import hr.algebra.domace.infrastructure.security.authentication.AuthenticationContext
+import hr.algebra.domace.domain.security.AuthContext
 
 /**
  * Functional interface representing an authorization scope.
@@ -28,5 +28,5 @@ fun interface AuthorizationScope {
      *
      * @return An EitherNel of DomainError and AuthenticationContext.
      */
-    suspend fun AuthenticationContext.authorize(): EitherNel<DomainError, AuthenticationContext>
+    suspend fun AuthContext.authorize(): EitherNel<DomainError, AuthContext>
 }

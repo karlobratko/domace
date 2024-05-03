@@ -1,9 +1,10 @@
-package hr.algebra.domace.infrastructure.security.authorization.scope
+package hr.algebra.domace.infrastructure.security.authorization
 
 import arrow.core.leftNel
 import arrow.core.right
 import hr.algebra.domace.domain.SecurityError.AuthorizationError.UnauthorizedResourceAccess
 import hr.algebra.domace.domain.model.User
+import hr.algebra.domace.domain.security.authorization.AuthorizationScope
 import io.ktor.server.routing.Route
 
 /**
@@ -18,7 +19,7 @@ import io.ktor.server.routing.Route
  * @return An AuthorizationScope that authorizes a user based on their role.
  */
 fun RoleBasedAuthorizationScope(roles: List<User.Role>) = AuthorizationScope {
-    if (user.role in roles) right() else UnauthorizedResourceAccess.leftNel()
+    if (role in roles) right() else UnauthorizedResourceAccess.leftNel()
 }
 
 /**

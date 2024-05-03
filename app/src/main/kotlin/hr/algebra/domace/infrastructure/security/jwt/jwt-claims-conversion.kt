@@ -5,7 +5,7 @@ import arrow.core.raise.either
 import hr.algebra.domace.domain.ConversionError.ValidationNotPerformed
 import hr.algebra.domace.domain.conversion.FailingConversionScope
 import hr.algebra.domace.domain.getOrRaise
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.domain.toNonEmptyListOrRaise
 import io.github.nefilim.kjwt.DecodedJWT
 import io.github.nefilim.kjwt.JWSAlgorithm
@@ -22,6 +22,7 @@ fun <T : JWSAlgorithm> JwtToTokenClaimsConversion(format: StringFormat) = JwtToT
         val subject = Claims.Subject(subject().getOrRaise { ValidationNotPerformed })
         val issuedAt = Claims.IssuedAt(issuedAt().getOrRaise { ValidationNotPerformed }.toKotlinInstant())
         val expiresAt = Claims.ExpiresAt(expiresAt().getOrRaise { ValidationNotPerformed }.toKotlinInstant())
+        val role = Claims.Role(role().getOrRaise { ValidationNotPerformed })
 
         val audience = catch({
             format.decodeFromString(
@@ -34,9 +35,6 @@ fun <T : JWSAlgorithm> JwtToTokenClaimsConversion(format: StringFormat) = JwtToT
             Claims.Use.valueOf(use().getOrRaise { ValidationNotPerformed })
         }) { raise(ValidationNotPerformed) }
 
-        when (use) {
-            Claims.Use.Refresh -> Claims.Refresh(issuer, subject, audience, issuedAt, expiresAt)
-            Claims.Use.Access -> Claims.Access(issuer, subject, audience, issuedAt, expiresAt)
-        }
+        Claims(issuer, subject, audience, use, issuedAt, expiresAt, role)
     }
 }

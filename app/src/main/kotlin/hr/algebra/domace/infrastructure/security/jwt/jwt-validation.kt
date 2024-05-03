@@ -10,10 +10,11 @@ import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingAudie
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingExpiresAtClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingIssuedAtClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingIssuerClaim
+import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingRoleClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingSubjectClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingUseClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.UnsupportedUseClaim
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.domain.toEitherNel
 import hr.algebra.domace.domain.toNonEmptyListOrLeftNel
 import hr.algebra.domace.domain.validation.ValidationScope
@@ -49,5 +50,6 @@ fun <T : JWSAlgorithm> JwtValidation(format: StringFormat) = JwtValidationScope<
         }
         with { jwt -> jwt.issuedAt().toEitherNel { MissingIssuedAtClaim } }
         with { jwt -> jwt.expiresAt().toEitherNel { MissingExpiresAtClaim } }
+        with { jwt -> jwt.role().toEitherNel { MissingRoleClaim } }
     }
 }

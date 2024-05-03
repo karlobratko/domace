@@ -1,8 +1,8 @@
-package hr.algebra.domace.infrastructure.security.authentication.scope
+package hr.algebra.domace.domain.security.authentication
 
 import arrow.core.EitherNel
 import hr.algebra.domace.domain.DomainError
-import hr.algebra.domace.infrastructure.security.authentication.AuthenticationContext
+import hr.algebra.domace.domain.security.AuthContext
 import io.ktor.server.request.ApplicationRequest
 
 /**
@@ -22,5 +22,5 @@ fun interface AuthenticationScope {
      * @return Either a non-empty list of DomainError objects if the authorization failed, or an AuthorizationContext
      * if it succeeded.
      */
-    suspend fun ApplicationRequest.authenticate(): EitherNel<DomainError, AuthenticationContext>
+    suspend fun ApplicationRequest.authenticate(): EitherNel<DomainError, AuthContext>
 }

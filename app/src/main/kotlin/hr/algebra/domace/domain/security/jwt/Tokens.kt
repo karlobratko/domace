@@ -1,4 +1,4 @@
-package hr.algebra.domace.domain.security
+package hr.algebra.domace.domain.security.jwt
 
 import arrow.core.Either
 import arrow.core.EitherNel
@@ -38,10 +38,26 @@ interface Tokens {
     suspend fun Token.extractClaims(): EitherNel<SecurityError, Claims>
 }
 
+/**
+ * Generates a refresh token from the given claims.
+ *
+ * This method is suspending and can be used in a coroutine context.
+ *
+ * @return An `Either` of `SecurityError` and `Token.Refresh`. If the operation was successful, the `Either` will be
+ * `Either.Right` with the generated `Token.Refresh`. Otherwise, it will be `Either.Left` with the `SecurityError`.
+ */
 context(Tokens)
-suspend fun Claims.Refresh.generateRefreshToken(): Either<SecurityError, Token.Refresh> =
+suspend fun Claims.generateRefreshToken(): Either<SecurityError, Token.Refresh> =
     generateToken().map { it as Token.Refresh }
 
+/**
+ * Generates an access token from the given claims.
+ *
+ * This method is suspending and can be used in a coroutine context.
+ *
+ * @return An `Either` of `SecurityError` and `Token.Access`. If the operation was successful, the `Either` will be
+ * `Either.Right` with the generated `Token.Access`. Otherwise, it will be `Either.Left` with the `SecurityError`.
+ */
 context(Tokens)
-suspend fun Claims.Access.generateAccessToken(): Either<SecurityError, Token.Access> =
+suspend fun Claims.generateAccessToken(): Either<SecurityError, Token.Access> =
     generateToken().map { it as Token.Access }

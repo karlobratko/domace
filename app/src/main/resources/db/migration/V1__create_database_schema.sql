@@ -18,4 +18,3 @@ CREATE TABLE refresh_tokens
     status     SMALLINT                 NOT NULL,
     FOREIGN KEY (user_fk) REFERENCES users (user_pk)
 );
-

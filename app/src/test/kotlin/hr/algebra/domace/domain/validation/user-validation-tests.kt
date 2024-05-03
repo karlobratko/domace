@@ -23,87 +23,64 @@ import io.kotest.property.arbitrary.element
 import io.kotest.property.arbitrary.email
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.printableAscii
 import io.kotest.property.arbitrary.single
 import io.kotest.property.arbitrary.string
-import io.kotest.property.assume
 import io.kotest.property.checkAll
 
 object UserValidationTests : ShouldSpec({
     context("UsernameValidation") {
         should("pass if username is of length between 5 and 50 and alphanumeric") {
-            checkAll(Arb.string(5..50, Codepoint.alphanumeric())) { string ->
-                // given
-                val username = User.Username(string)
-
-                // when
+            checkAll(Arb.string(5..50, Codepoint.alphanumeric()).map(User::Username)) { username ->
                 val actual = with(UsernameValidation) {
                     username.validate()
                 }
 
-                // then
                 actual shouldBeRight username
             }
         }
 
         should("fail if username is not alphanumeric") {
-            checkAll(Arb.string(5..50, Codepoint.printableAscii())) { string ->
-                assume(!string.isAlphanumeric())
-
-                // given
-                val username = User.Username(string)
-
-                // when
+            checkAll(
+                Arb.string(5..50, Codepoint.printableAscii()).filterNot(String::isAlphanumeric).map(User::Username)
+            ) { username ->
                 val actual = with(UsernameValidation) {
                     username.validate()
                 }
 
-                // then
                 actual shouldBeLeft NonAlphanumericCharacterInUsername.nel()
             }
         }
 
         should("fail if username is shorter then 5 characters") {
-            checkAll(Arb.string(0..4, Codepoint.alphanumeric())) { string ->
-                // given
-                val username = User.Username(string)
-
-                // when
+            checkAll(Arb.string(0..4, Codepoint.alphanumeric()).map(User::Username)) { username ->
                 val actual = with(UsernameValidation) {
                     username.validate()
                 }
 
-                // then
                 actual shouldBeLeft TooShortUsername.nel()
             }
         }
 
         should("fail if username is longer than 50 characters") {
-            checkAll(Arb.string(51..100, Codepoint.alphanumeric())) { string ->
-                // given
-                val username = User.Username(string)
-
-                // when
+            checkAll(Arb.string(51..100, Codepoint.alphanumeric()).map(User::Username)) { username ->
                 val actual = with(UsernameValidation) {
                     username.validate()
                 }
 
-                // then
                 actual shouldBeLeft TooLongUsername.nel()
             }
         }
 
         should("accumulate errors from all validation steps") {
-            checkAll(Arb.string(51..100, Codepoint.printableAscii()).filterNot(String::isAlphanumeric)) { string ->
-                // given
-                val username = User.Username(string)
-
-                // when
+            checkAll(
+                Arb.string(51..100, Codepoint.printableAscii()).filterNot(String::isAlphanumeric).map(User::Username)
+            ) { username ->
                 val actual = with(UsernameValidation) {
                     username.validate()
                 }
 
-                // then
                 actual shouldBeLeft nonEmptyListOf(NonAlphanumericCharacterInUsername, TooLongUsername)
             }
         }
@@ -111,16 +88,11 @@ object UserValidationTests : ShouldSpec({
 
     context("EmailValidation") {
         should("pass if email is of length at max 256 and satisfies pattern") {
-            checkAll(Arb.email()) { string ->
-                // given
-                val email = User.Email(string)
-
-                // when
+            checkAll(Arb.email().map(User::Email)) { email ->
                 val actual = with(EmailValidation) {
                     email.validate()
                 }
 
-                // then
                 actual shouldBeRight email
             }
         }
@@ -133,30 +105,22 @@ object UserValidationTests : ShouldSpec({
                 "has no whitespaces, and " +
                 "has at least one digit, uppercase character and special character"
         ) {
-            checkAll(Arb.password(5..50)) { string ->
-                // given
-                val password = User.Password(string)
-
-                // when
+            checkAll(Arb.password(5..50).map(User::Password)) { password ->
                 val actual = with(PasswordValidation) {
                     password.validate()
                 }
 
-                // then
                 actual shouldBeRight password
             }
         }
 
         should("accumulate errors from all validation steps") {
-            // given
             val password = User.Password("pas ")
 
-            // when
             val actual = with(PasswordValidation) {
                 password.validate()
             }
 
-            // then
             actual shouldBeLeft nonEmptyListOf(
                 TooShortPassword,
                 WhitespaceInPassword,

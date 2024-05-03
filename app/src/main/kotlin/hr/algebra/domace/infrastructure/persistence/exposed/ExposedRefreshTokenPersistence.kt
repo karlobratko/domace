@@ -12,8 +12,8 @@ import hr.algebra.domace.domain.config.RoundedInstantProvider
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
-import hr.algebra.domace.domain.security.Claims
-import hr.algebra.domace.domain.security.Token
+import hr.algebra.domace.domain.security.jwt.Claims
+import hr.algebra.domace.domain.security.jwt.Token
 import java.time.ZoneOffset.UTC
 import kotlinx.datetime.toJavaInstant
 import kotlinx.datetime.toKotlinInstant
@@ -27,7 +27,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import kotlin.time.Duration
@@ -57,8 +56,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
                 it[status] = refreshToken.status
             }
 
-            RefreshTokensTable
-                .selectAll()
+            selectAllWithUserRole()
                 .where { RefreshTokensTable.id eq id }
                 .single()
                 .toRecord()
@@ -67,8 +65,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
 
     override suspend fun select(id: RefreshToken.Id): Option<RefreshToken.Entity> =
         ioTransaction(db) {
-            RefreshTokensTable
-                .selectAll()
+            selectAllWithUserRole()
                 .where { RefreshTokensTable.id eq id.value }
                 .singleOrNone()
                 .map { it.toRecord() }
@@ -76,8 +73,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
 
     override suspend fun select(token: Token.Refresh): Option<RefreshToken.Entity> =
         ioTransaction(db) {
-            RefreshTokensTable
-                .selectAll()
+            selectAllWithUserRole()
                 .where { RefreshTokensTable.token eq token.value }
                 .singleOrNone()
                 .map { it.toRecord() }
@@ -92,8 +88,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
                     }
                 ensure(updatedCount > 0) { NothingWasChanged }
 
-                RefreshTokensTable
-                    .selectAll()
+                selectAllWithUserRole()
                     .where { RefreshTokensTable.id eq tokenId.value }
                     .single()
                     .toRecord()
@@ -109,8 +104,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
                     }
                 ensure(updatedCount > 0) { NothingWasChanged }
 
-                RefreshTokensTable
-                    .selectAll()
+                selectAllWithUserRole()
                     .where { RefreshTokensTable.id eq prolong.id.value }
                     .single()
                     .toRecord()
@@ -121,8 +115,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
         ioTransaction(db) {
             val now = RoundedInstantProvider.now().toJavaInstant().atOffset(UTC)
             val tokensToRevoke =
-                RefreshTokensTable
-                    .selectAll()
+                selectAllWithUserRole()
                     .where { RefreshTokensTable.expiresAt lessEq now }
                     .map { it.toRecord() }
                     .toSet()
@@ -147,8 +140,7 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
         ioTransaction(db) {
             val boundary = (RoundedInstantProvider.now() - duration).toJavaInstant().atOffset(UTC)
             val expiredTokens =
-                RefreshTokensTable
-                    .selectAll()
+                selectAllWithUserRole()
                     .where { RefreshTokensTable.expiresAt lessEq boundary }
                     .map { it.toRecord() }
                     .toSet()
@@ -158,10 +150,23 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
             expiredTokens
         }
 
+    private fun selectAllWithUserRole() =
+        (RefreshTokensTable innerJoin UsersTable)
+            .select(
+                RefreshTokensTable.id,
+                RefreshTokensTable.userId,
+                UsersTable.role,
+                RefreshTokensTable.token,
+                RefreshTokensTable.issuedAt,
+                RefreshTokensTable.expiresAt,
+                RefreshTokensTable.status
+            )
+
     private fun ResultRow.toRecord(): RefreshToken.Entity {
         return RefreshToken.Entity(
             RefreshToken.Id(this[RefreshTokensTable.id].value),
             User.Id(this[RefreshTokensTable.userId].value),
+            this[UsersTable.role],
             Token.Refresh(this[RefreshTokensTable.token]),
             Claims.IssuedAt(this[RefreshTokensTable.issuedAt].toInstant().toKotlinInstant()),
             Claims.ExpiresAt(this[RefreshTokensTable.expiresAt].toInstant().toKotlinInstant()),

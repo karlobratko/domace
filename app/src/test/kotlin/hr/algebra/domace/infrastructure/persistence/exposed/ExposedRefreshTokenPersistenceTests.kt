@@ -7,8 +7,8 @@ import hr.algebra.domace.domain.config.RoundedInstantProvider
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
-import hr.algebra.domace.domain.security.Claims
-import hr.algebra.domace.domain.security.Token
+import hr.algebra.domace.domain.security.jwt.Claims
+import hr.algebra.domace.domain.security.jwt.Token
 import hr.algebra.domace.infrastructure.persistence.Database.test
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeNone
@@ -40,7 +40,7 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
     }
 
     should("should insert to database") {
-        val userId = insertUser(userPersistence).shouldBeRight().id
+        val user = insertUser(userPersistence).shouldBeRight()
         val token = Token.Refresh("token")
         val issuedAt = Claims.IssuedAt()
         val lasting = Token.Lasting(15.minutes)
@@ -48,18 +48,19 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
 
         val actual = insertRefreshToken(
             persistence,
-            userId = userId,
+            userId = user.id,
             token = token,
             issuedAt = issuedAt,
             lasting = lasting
         ).shouldBeRight()
 
         actual.should {
-            it.userId shouldBeEqual userId
+            it.userId shouldBeEqual user.id
             it.token shouldBeEqual token
             it.issuedAt shouldBeEqual issuedAt
             it.expiresAt shouldBeEqual expiresAt
             it.status shouldBeEqual RefreshToken.Status.Active
+            it.userRole shouldBeEqual user.role
         }
     }
 

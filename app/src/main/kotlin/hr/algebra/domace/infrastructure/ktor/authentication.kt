@@ -1,9 +1,9 @@
 package hr.algebra.domace.infrastructure.ktor
 
+import hr.algebra.domace.domain.security.AuthContext
+import hr.algebra.domace.domain.security.authentication.AuthenticationScope
 import hr.algebra.domace.infrastructure.routes.respond
 import hr.algebra.domace.infrastructure.routes.toFailure
-import hr.algebra.domace.infrastructure.security.authentication.AuthenticationContext
-import hr.algebra.domace.infrastructure.security.authentication.scope.AuthenticationScope
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.request.ApplicationRequest
@@ -36,7 +36,7 @@ context(AuthenticationScope)
 @KtorDsl
 fun Route.get(
     path: String,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route = get(path, this@AuthenticationScope, body)
 
 /**
@@ -62,7 +62,7 @@ context(AuthenticationScope)
 @JvmName("getResource")
 inline fun <reified T> Route.get(
     path: String,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route = get(path, this@AuthenticationScope, body)
 
 /**
@@ -87,7 +87,7 @@ inline fun <reified T> Route.get(
 fun Route.get(
     path: String,
     authenticationScope: AuthenticationScope,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route =
     get(path) {
         call.request.authenticate(authenticationScope, body)
@@ -117,7 +117,7 @@ fun Route.get(
 inline fun <reified T> Route.get(
     path: String,
     authenticationScope: AuthenticationScope,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route =
     get(path) {
         call.request.authenticate(authenticationScope) { context ->
@@ -148,7 +148,7 @@ context(AuthenticationScope)
 @KtorDsl
 fun Route.post(
     path: String,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route = post(path, this@AuthenticationScope, body)
 
 /**
@@ -174,7 +174,7 @@ context(AuthenticationScope)
 @JvmName("postResource")
 inline fun <reified T> Route.post(
     path: String,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route = post(path, this@AuthenticationScope, body)
 
 /**
@@ -199,7 +199,7 @@ inline fun <reified T> Route.post(
 fun Route.post(
     path: String,
     authenticationScope: AuthenticationScope,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route =
     post(path) {
         call.request.authenticate(authenticationScope, body)
@@ -229,7 +229,7 @@ fun Route.post(
 inline fun <reified T> Route.post(
     path: String,
     authenticationScope: AuthenticationScope,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route =
     post(path) {
         call.request.authenticate(authenticationScope) { context ->
@@ -260,7 +260,7 @@ context(AuthenticationScope)
 @KtorDsl
 fun Route.put(
     path: String,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route = put(path, this@AuthenticationScope, body)
 
 /**
@@ -286,7 +286,7 @@ context(AuthenticationScope)
 @JvmName("putResource")
 inline fun <reified T> Route.put(
     path: String,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route = put(path, this@AuthenticationScope, body)
 
 /**
@@ -311,7 +311,7 @@ inline fun <reified T> Route.put(
 fun Route.put(
     path: String,
     authenticationScope: AuthenticationScope,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route =
     put(path) {
         call.request.authenticate(authenticationScope, body)
@@ -341,7 +341,7 @@ fun Route.put(
 inline fun <reified T> Route.put(
     path: String,
     authenticationScope: AuthenticationScope,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route =
     put(path) {
         call.request.authenticate(authenticationScope) { context ->
@@ -372,7 +372,7 @@ context(AuthenticationScope)
 @KtorDsl
 fun Route.delete(
     path: String,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route = delete(path, this@AuthenticationScope, body)
 
 /**
@@ -398,7 +398,7 @@ context(AuthenticationScope)
 @JvmName("deleteResource")
 inline fun <reified T> Route.delete(
     path: String,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route = delete(path, this@AuthenticationScope, body)
 
 /**
@@ -423,7 +423,7 @@ inline fun <reified T> Route.delete(
 fun Route.delete(
     path: String,
     authenticationScope: AuthenticationScope,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ): Route =
     delete(path) {
         call.request.authenticate(authenticationScope, body)
@@ -453,7 +453,7 @@ fun Route.delete(
 inline fun <reified T> Route.delete(
     path: String,
     authenticationScope: AuthenticationScope,
-    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthenticationContext, T>) -> Unit
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(Pair<AuthContext, T>) -> Unit
 ): Route =
     delete(path) {
         call.request.authenticate(authenticationScope) { context ->
@@ -484,7 +484,7 @@ inline fun <reified T> Route.delete(
 context(PipelineContext<Unit, ApplicationCall>)
 suspend fun ApplicationRequest.authenticate(
     authenticationScope: AuthenticationScope,
-    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthenticationContext) -> Unit
+    body: suspend PipelineContext<Unit, ApplicationCall>.(AuthContext) -> Unit
 ) {
     with(authenticationScope) {
         this@authenticate.authenticate()

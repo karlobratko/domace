@@ -14,8 +14,8 @@ import hr.algebra.domace.domain.validation.RoleValidation
 import hr.algebra.domace.domain.validation.UsernameValidation
 import hr.algebra.domace.domain.with
 import hr.algebra.domace.infrastructure.ktor.get
-import hr.algebra.domace.infrastructure.security.authentication.scope.jwt
-import hr.algebra.domace.infrastructure.security.authorization.scope.role
+import hr.algebra.domace.infrastructure.security.authentication.jwt
+import hr.algebra.domace.infrastructure.security.authorization.role
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.response.respond
