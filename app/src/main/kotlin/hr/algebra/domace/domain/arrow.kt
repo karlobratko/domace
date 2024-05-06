@@ -122,6 +122,32 @@ fun <Error> String.toLongOrLeftNel(error: () -> Error): EitherNel<Error, Long> =
 context(Raise<Error>)
 inline fun <Error, A> Option<A>.getOrRaise(error: () -> Error) = getOrElse { raise(error()) }
 
+/**
+ * This function is an extension function on the `Option<A>` type from the Arrow library.
+ * It is used to get the value from the `Option` if it is present (`Some`), or raise an error if it is not (`None`).
+ * The error is created by the provided `error` function.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the value contained in the `Option`.
+ * @param error A function that creates an instance of `Error`. This function is called if the `Option` is `None`.
+ * @return The value contained in the `Option` if it is `Some`.
+ * @throws Error If the `Option` is `None`, the function raises an error of type `Error`.
+ */
+context(Raise<Nel<Error>>)
+inline fun <Error, A> Option<A>.getOrRaiseNel(error: () -> Error) = getOrElse { raise(error().nel()) }
+
+/**
+ * This function is an extension function on the `Option<A>` type from the Arrow library.
+ * It is used to convert the `Option` to an `EitherNel` type.
+ * If the `Option` is `Some`, the contained value is wrapped in an `Either.Right`.
+ * If the `Option` is `None`, an error is created by the provided `ifEmpty` function and wrapped in an `Either.Left`.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the value contained in the `Option`.
+ * @param ifEmpty A function that creates an instance of `Error`. This function is called if the `Option` is `None`.
+ * @return An `EitherNel` containing either the error created by `ifEmpty` (Either.Left), or the value contained in
+ * the `Option` (Either.Right).
+ */
 inline fun <Error, A> Option<A>.toEitherNel(ifEmpty: () -> Error): EitherNel<Error, A> = toEither { ifEmpty().nel() }
 
 /**

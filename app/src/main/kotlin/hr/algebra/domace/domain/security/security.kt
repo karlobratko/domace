@@ -3,7 +3,16 @@ package hr.algebra.domace.domain.security
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.security.jwt.Claims
-import hr.algebra.domace.domain.security.jwt.Token
+import kotlin.time.Duration
+
+/**
+ * Represents a duration for which a certain action or state lasts.
+ *
+ * This is a value class, meaning it only contains the value of the duration.
+ *
+ * @property value The duration value.
+ */
+@JvmInline value class LastingFor(val value: Duration)
 
 /**
  * Represents the security configuration for JWT tokens.
@@ -14,8 +23,8 @@ import hr.algebra.domace.domain.security.jwt.Token
  */
 data class Security(
     val issuer: Claims.Issuer,
-    val refreshLasting: Token.Lasting,
-    val accessLasting: Token.Lasting
+    val refreshLasting: LastingFor,
+    val accessLasting: LastingFor
 )
 
 /**
@@ -38,7 +47,7 @@ data class Security(
  * @param refreshToken The RefreshToken entity.
  */
 data class AuthContext(val userId: User.Id, val role: User.Role) {
-    constructor(user: User.Entity) : this(user.id, user.role)
+    constructor(user: User) : this(user.id, user.role)
 
-    constructor(refreshToken: RefreshToken.Entity) : this(refreshToken.userId, refreshToken.userRole)
+    constructor(refreshToken: RefreshToken) : this(refreshToken.userId, refreshToken.userRole)
 }

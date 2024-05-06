@@ -6,8 +6,8 @@ import hr.algebra.domace.domain.SecurityError.TokenExpired
 import hr.algebra.domace.domain.kotest.instant
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
+import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.jwt.Claims
-import hr.algebra.domace.domain.security.jwt.Token
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.ShouldSpec
@@ -26,7 +26,7 @@ object RefreshTokenValidationTests : ShouldSpec({
             Arb.instant(now().plus(1.seconds)..DistantFuture).map(Claims::ExpiresAt),
             Arb.enum<RefreshToken.Status>()
         ) { expiresAt, status ->
-            val refreshTokenEntity = RefreshToken.Entity(
+            val refreshTokenEntity = RefreshToken(
                 RefreshToken.Id(1),
                 User.Id(1),
                 User.Role.Admin,
@@ -50,7 +50,7 @@ object RefreshTokenValidationTests : ShouldSpec({
             Arb.enum<RefreshToken.Status>()
         ) { expiresAt, status ->
             // given
-            val refreshTokenEntity = RefreshToken.Entity(
+            val refreshTokenEntity = RefreshToken(
                 RefreshToken.Id(1),
                 User.Id(1),
                 User.Role.Admin,

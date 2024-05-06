@@ -1,17 +1,12 @@
 package hr.algebra.domace.infrastructure.security
 
-import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
 import hr.algebra.domace.domain.security.AuthContext
+import hr.algebra.domace.domain.security.LastingFor
 import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Security
 import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.domain.security.jwt.JwtTokenService
-import hr.algebra.domace.domain.security.jwt.Token
-import hr.algebra.domace.domain.security.jwt.TokenCache
-import hr.algebra.domace.domain.security.jwt.TokenService
-import hr.algebra.domace.domain.security.jwt.Tokens
-import hr.algebra.domace.infrastructure.security.authentication.JwtAuthorizationScope
-import hr.algebra.domace.infrastructure.security.jwt.InMemoryTokenCache
+import hr.algebra.domace.infrastructure.security.authentication.JwtAuthenticationScope
 import hr.algebra.domace.infrastructure.security.jwt.JwtTokens
 import hr.algebra.domace.infrastructure.security.jwt.SecurityConfig
 import hr.algebra.domace.infrastructure.security.jwt.SecuritySecretConfig
@@ -24,12 +19,10 @@ val SecurityModule =
         single(createdAtStart = true) {
             val config: SecurityConfig = Resources.hocon("security/security.conf")
 
-            println(config)
-
             Security(
                 issuer = Claims.Issuer(config.issuer),
-                refreshLasting = Token.Lasting(config.lasting.refresh),
-                accessLasting = Token.Lasting(config.lasting.access)
+                refreshLasting = LastingFor(config.lasting.refresh),
+                accessLasting = LastingFor(config.lasting.access)
             )
         }
 
@@ -49,12 +42,12 @@ val SecurityModule =
 
         single {
             JwtTokenService(
-                security = get<Security>(),
-                algebra = get<Tokens>(),
-                refreshTokenPersistence = get<RefreshTokenPersistence>(),
-                accessTokenCache = get<TokenCache<AuthContext>>()
+                security = get(),
+                algebra = get(),
+                refreshTokenPersistence = get(),
+                accessTokenCache = get()
             )
         }
 
-        single(named("jwt")) { JwtAuthorizationScope(get<TokenService>()) }
+        single(named("jwt")) { JwtAuthenticationScope(get()) }
     }

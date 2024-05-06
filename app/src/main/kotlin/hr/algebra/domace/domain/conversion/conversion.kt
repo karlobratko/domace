@@ -35,3 +35,16 @@ fun interface ConversionScope<A, B> {
  * @param B The type of the object after successful conversion.
  */
 typealias FailingConversionScope<Error, A, B> = ConversionScope<A, Either<Error, B>>
+
+/**
+ * Converts an object of type A to an object of type B using the provided ConversionScope.
+ *
+ * This function is an extension function on the type A, and it uses the `convert` function of the provided
+ * ConversionScope to perform the conversion.
+ *
+ * @param scope The ConversionScope to use for the conversion. It must be a ConversionScope<A, B>, where A is the type
+ * of the receiver and B is the type of the result.
+ *
+ * @return The converted object of type B.
+ */
+fun <A, B> A.convert(scope: ConversionScope<A, B>): B = with(scope) { this@convert.convert() }

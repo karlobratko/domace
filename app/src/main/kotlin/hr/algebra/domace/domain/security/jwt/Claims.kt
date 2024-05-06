@@ -2,6 +2,7 @@ package hr.algebra.domace.domain.security.jwt
 
 import arrow.core.Nel
 import hr.algebra.domace.domain.config.RoundedInstantProvider
+import hr.algebra.domace.domain.security.LastingFor
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
@@ -62,7 +63,7 @@ data class Claims(
             subject: Subject,
             audience: Nel<Audience>,
             issuedAt: IssuedAt,
-            lasting: Token.Lasting,
+            lasting: LastingFor,
             role: Role
         ) = Claims(issuer, subject, audience, Use.Refresh, issuedAt, ExpiresAt(issuedAt.value + lasting.value), role)
 
@@ -102,7 +103,7 @@ data class Claims(
             subject: Subject,
             audience: Nel<Audience>,
             issuedAt: IssuedAt,
-            lasting: Token.Lasting,
+            lasting: LastingFor,
             role: Role
         ) = Claims(issuer, subject, audience, Use.Access, issuedAt, ExpiresAt(issuedAt.value + lasting.value), role)
     }

@@ -1,17 +1,18 @@
-package hr.algebra.domace.infrastructure.security.jwt
+package hr.algebra.domace.infrastructure.security
 
 import arrow.core.Option
 import arrow.core.toOption
 import com.mayakapps.kache.InMemoryKache
 import com.mayakapps.kache.KacheStrategy
-import hr.algebra.domace.domain.security.jwt.Token
-import hr.algebra.domace.domain.security.jwt.TokenCache
+import hr.algebra.domace.domain.security.LastingFor
+import hr.algebra.domace.domain.security.Token
+import hr.algebra.domace.domain.security.TokenCache
 import kotlin.time.TimeSource
 
 private const val CACHE_MAX_SIZE: Long = 100 * 1024 * 1024 // 100 MB
 
 fun <T : Any> InMemoryTokenCache(
-    expireAfter: Token.Lasting,
+    expireAfter: LastingFor,
     maxSize: Long = CACHE_MAX_SIZE,
     timeSource: TimeSource = TimeSource.Monotonic
 ) = object : TokenCache<T> {

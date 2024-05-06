@@ -6,7 +6,7 @@ import hr.algebra.domace.domain.SecurityError.InvalidRefreshTokenStatus
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.wrapEitherNel
 
-typealias RefreshTokenValidationScope = ValidationScope<SecurityError, RefreshToken.Entity>
+typealias RefreshTokenValidationScope = ValidationScope<SecurityError, RefreshToken>
 
 fun RefreshTokenValidation(status: RefreshToken.Status) =
     RefreshTokenValidationScope {

@@ -1,24 +1,38 @@
 package hr.algebra.domace.domain.model
 
 import hr.algebra.domace.domain.model.RefreshToken.Status.Active
+import hr.algebra.domace.domain.security.LastingFor
+import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.jwt.Claims
-import hr.algebra.domace.domain.security.jwt.Token
 
 /**
  * Represents a Refresh Token.
  *
- * This is a sealed interface, meaning that all implementations of this interface are nested within this interface.
+ * @property id The ID of the refresh token.
+ * @property userId The ID of the user associated with the refresh token.
+ * @property userRole The role of the user associated with the refresh token.
+ * @property token The actual refresh token.
+ * @property issuedAt The time at which the refresh token was issued.
+ * @property expiresAt The time at which the refresh token expires.
+ * @property status The status of the refresh token, either Active or Revoked.
  */
-sealed interface RefreshToken {
-
+data class RefreshToken(
+    val id: Id,
+    val userId: User.Id,
+    val userRole: User.Role,
+    val token: Token.Refresh,
+    val issuedAt: Claims.IssuedAt,
+    val expiresAt: Claims.ExpiresAt,
+    val status: Status
+) {
     /**
      * Represents a new Refresh Token.
      *
-     * @property userId The ID of the user for whom the token is issued.
-     * @property token The actual refresh token.
-     * @property issuedAt The time at which the token was issued.
-     * @property expiresAt The time at which the token expires.
-     * @property status The status of the token, default is Active.
+     * @property userId The ID of the user associated with the new refresh token.
+     * @property token The actual new refresh token.
+     * @property issuedAt The time at which the new refresh token was issued.
+     * @property expiresAt The time at which the new refresh token expires.
+     * @property status The status of the new refresh token, default is Active.
      */
     class New(
         val userId: User.Id,
@@ -26,21 +40,21 @@ sealed interface RefreshToken {
         val issuedAt: Claims.IssuedAt,
         val expiresAt: Claims.ExpiresAt,
         val status: Status = Active
-    ) : RefreshToken {
+    ) {
         /**
-         * Secondary constructor to create a new Refresh Token with a lasting duration.
+         * Constructor for creating a new Refresh Token with a lasting duration.
          *
-         * @param userId The ID of the user for whom the token is issued.
-         * @param token The actual refresh token.
-         * @param issuedAt The time at which the token was issued.
-         * @param lasting The duration for which the token lasts.
-         * @param status The status of the token, default is Active.
+         * @param userId The ID of the user associated with the new refresh token.
+         * @param token The actual new refresh token.
+         * @param issuedAt The time at which the new refresh token was issued.
+         * @param lasting The duration for which the new refresh token is valid.
+         * @param status The status of the new refresh token, default is Active.
          */
         constructor(
             userId: User.Id,
             token: Token.Refresh,
             issuedAt: Claims.IssuedAt,
-            lasting: Token.Lasting,
+            lasting: LastingFor,
             status: Status = Active
         ) : this(userId, token, issuedAt, Claims.ExpiresAt(issuedAt.value + lasting.value), status)
     }
@@ -48,34 +62,13 @@ sealed interface RefreshToken {
     /**
      * Represents a Refresh Token that is to be prolonged.
      *
-     * @property id The ID of the token to be prolonged.
-     * @property expiresAt The new expiry time of the token.
+     * @property id The ID of the refresh token to be prolonged.
+     * @property expiresAt The new expiration time of the refresh token.
      */
     class Prolong(
         val id: Id,
         val expiresAt: Claims.ExpiresAt
-    ) : RefreshToken
-
-    /**
-     * Represents an existing Refresh Token entity.
-     *
-     * @property id The ID of the token.
-     * @property userId The ID of the user for whom the token is issued.
-     * @property userRole The role of the user for whom the token is issued.
-     * @property token The actual refresh token.
-     * @property issuedAt The time at which the token was issued.
-     * @property expiresAt The time at which the token expires.
-     * @property status The status of the token.
-     */
-    data class Entity(
-        val id: Id,
-        val userId: User.Id,
-        val userRole: User.Role,
-        val token: Token.Refresh,
-        val issuedAt: Claims.IssuedAt,
-        val expiresAt: Claims.ExpiresAt,
-        val status: Status
-    ) : RefreshToken
+    )
 
     /**
      * Represents the ID of a Refresh Token.

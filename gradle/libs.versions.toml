@@ -55,6 +55,7 @@ ktor-server-auth = { module = "io.ktor:ktor-server-auth-jvm", version.ref = "kto
 ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt-jvm", version.ref = "ktor" }
 ktor-server-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-server-html-builder = { module = "io.ktor:ktor-server-html-builder", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core-jvm", version.ref = "ktor" }
 ktor-client-jetty = { module = "io.ktor:ktor-client-jetty-jvm", version.ref = "ktor" }
@@ -156,7 +157,8 @@ ktor-server = [
     "ktor-server-auth",
     "ktor-server-auth-jwt",
     "ktor-server-server-netty",
-    "ktor-server-html-builder"
+    "ktor-server-html-builder",
+    "ktor-server-status-pages"
 ]
 
 ktor-client = [

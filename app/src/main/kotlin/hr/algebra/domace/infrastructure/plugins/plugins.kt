@@ -9,4 +9,5 @@ fun Application.configure() {
     configureRouting()
     configureSerialization()
     configureSockets()
+    configureStatusPages()
 }

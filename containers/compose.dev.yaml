@@ -9,13 +9,18 @@ services:
             POSTGRES_PASSWORD: "uuxzm9hohtcxxs2pbmhhrhzm7id61e5e"
         ports:
             - "5432:5432"
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - "8081:8080"
     mailpit:
         image: axllent/mailpit
         container_name: mailpit
         restart: unless-stopped
         ports:
-            - 8025:8025
-            - 1025:1025
+            - "8025:8025"
+            - "1025:1025"
         environment:
             MP_MAX_MESSAGES: 5000
             MP_SMTP_AUTH: "81thzwsqlnntn22x24m2asjw93parhh2:g3t310ltdcltcb9lwpjuofiic6ltnm95"

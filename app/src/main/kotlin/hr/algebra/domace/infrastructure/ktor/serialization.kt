@@ -1,9 +1,9 @@
 package hr.algebra.domace.infrastructure.ktor
 
-import hr.algebra.domace.domain.RequestBodyCouldNotBeParsed
+import hr.algebra.domace.domain.RequestError.RequestBodyCouldNotBeParsed
 import hr.algebra.domace.domain.toEitherNel
-import hr.algebra.domace.infrastructure.routes.respond
-import hr.algebra.domace.infrastructure.routes.toFailure
+import hr.algebra.domace.infrastructure.routes.dto.respond
+import hr.algebra.domace.infrastructure.routes.dto.toFailure
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.routing.Route

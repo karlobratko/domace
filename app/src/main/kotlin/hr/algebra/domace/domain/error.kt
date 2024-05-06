@@ -2,11 +2,19 @@ package hr.algebra.domace.domain
 
 sealed interface DomainError
 
+data object UnhandledError : DomainError
+
 sealed interface MailingError : DomainError {
     data object CouldNotSendEmail : MailingError
 }
 
-data object RequestBodyCouldNotBeParsed : DomainError
+sealed interface RequestError : DomainError {
+    data object RequestBodyCouldNotBeParsed : RequestError
+
+    data object InvalidRequestPathParameter : RequestError
+
+    data object InvalidRequestQueryParameter : RequestError
+}
 
 sealed interface DbError : DomainError {
     data object NothingWasChanged : DbError
@@ -20,6 +28,10 @@ sealed interface DbError : DomainError {
     data object InvalidUsernameOrPassword : DbError
 
     data object UnhandledDbError : DbError
+
+    data object RegistrationTokenAlreadyConfirmed : DbError
+
+    data object TokenAlreadyExists : DbError
 }
 
 sealed interface SecurityError : DomainError {
@@ -66,7 +78,6 @@ sealed interface SecurityError : DomainError {
     }
 
     sealed interface AuthorizationError : SecurityError {
-        data object UnknownSubjectResourceAccess : AuthorizationError
         data object UnauthorizedResourceAccess : AuthorizationError
     }
 }

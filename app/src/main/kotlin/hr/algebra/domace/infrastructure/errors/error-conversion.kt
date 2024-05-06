@@ -5,8 +5,9 @@ import hr.algebra.domace.domain.ConversionError
 import hr.algebra.domace.domain.DbError
 import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.MailingError
-import hr.algebra.domace.domain.RequestBodyCouldNotBeParsed
+import hr.algebra.domace.domain.RequestError
 import hr.algebra.domace.domain.SecurityError
+import hr.algebra.domace.domain.UnhandledError
 import hr.algebra.domace.domain.ValidationError
 import hr.algebra.domace.domain.conversion.ConversionScope
 import io.ktor.http.HttpStatusCode
@@ -54,9 +55,11 @@ val ErrorToHttpStatusCodeConversion = ErrorToHttpStatusCodeConversionScope {
         DbError.EmailAlreadyExists -> BadRequest
         DbError.InvalidUsernameOrPassword -> BadRequest
         DbError.ValueAlreadyExists -> BadRequest
+        DbError.RegistrationTokenAlreadyConfirmed -> BadRequest
+        DbError.TokenAlreadyExists -> BadRequest
         SecurityError.InvalidRefreshTokenStatus -> BadRequest
         SecurityError.UnknownToken -> BadRequest
-        RequestBodyCouldNotBeParsed -> BadRequest
+        is RequestError -> BadRequest
         is ValidationError -> BadRequest
         SecurityError.ClaimsExtractionError -> Unauthorized
         is SecurityError.ClaimsValidationError -> Unauthorized
@@ -70,5 +73,6 @@ val ErrorToHttpStatusCodeConversion = ErrorToHttpStatusCodeConversionScope {
         is MailingError -> InternalServerError
         SecurityError.TokenGenerationError -> InternalServerError
         SecurityError.TokenVerificationError -> InternalServerError
+        UnhandledError -> InternalServerError
     }
 }

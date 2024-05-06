@@ -4,19 +4,21 @@ import arrow.core.nel
 import hr.algebra.domace.domain.SecurityError.InvalidRefreshTokenStatus
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.security.AuthContext
-import hr.algebra.domace.domain.security.jwt.Claims
+import hr.algebra.domace.domain.security.LastingFor
 import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Security
-import hr.algebra.domace.domain.security.jwt.Token
-import hr.algebra.domace.domain.security.jwt.TokenCache
-import hr.algebra.domace.domain.security.jwt.TokenService
+import hr.algebra.domace.domain.security.TokenCache
+import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.domain.security.jwt.JwtTokenService
 import hr.algebra.domace.infrastructure.persistence.Database.test
 import hr.algebra.domace.infrastructure.persistence.exposed.ExposedRefreshTokenPersistence
+import hr.algebra.domace.infrastructure.persistence.exposed.ExposedRegistrationTokenPersistence
 import hr.algebra.domace.infrastructure.persistence.exposed.ExposedUserPersistence
 import hr.algebra.domace.infrastructure.persistence.exposed.RefreshTokensTable
+import hr.algebra.domace.infrastructure.persistence.exposed.RegistrationConfig
 import hr.algebra.domace.infrastructure.persistence.exposed.UsersTable
 import hr.algebra.domace.infrastructure.persistence.exposed.insertUser
+import hr.algebra.domace.infrastructure.security.InMemoryTokenCache
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeNone
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -34,8 +36,8 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 object JwtTokenServiceTests : ShouldSpec({
-    val refreshTokenLasting = Token.Lasting(1.days)
-    val accessTokenLasting = Token.Lasting(15.minutes)
+    val refreshTokenLasting = LastingFor(1.days)
+    val accessTokenLasting = LastingFor(15.minutes)
 
     val security = Security(
         Claims.Issuer("domace"),
@@ -45,13 +47,18 @@ object JwtTokenServiceTests : ShouldSpec({
 
     val algebra = JwtTokens(Secret("6d792d73757065722d7365637572652d736563726574"))
 
-    val userPersistence = ExposedUserPersistence(test)
+    val registrationTokenPersistence = ExposedRegistrationTokenPersistence(
+        test,
+        RegistrationConfig(LastingFor(15.minutes))
+    )
+
+    val userPersistence = ExposedUserPersistence(test, registrationTokenPersistence)
 
     val refreshTokenPersistence = ExposedRefreshTokenPersistence(test)
 
     lateinit var tokenCache: TokenCache<AuthContext>
 
-    lateinit var tokenService: TokenService
+    lateinit var jwtTokenService: JwtTokenService
 
     beforeContainer {
         transaction(test) {
@@ -60,7 +67,7 @@ object JwtTokenServiceTests : ShouldSpec({
 
         tokenCache = InMemoryTokenCache(accessTokenLasting)
 
-        tokenService = JwtTokenService(
+        jwtTokenService = JwtTokenService(
             security,
             algebra,
             refreshTokenPersistence,
@@ -81,7 +88,7 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (refresh, access) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (refresh, access) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         should("valid expireAt claims should be set based on token lasting configuration") {
             with(algebra) {
@@ -121,14 +128,14 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (_, access) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (_, access) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         should("access token should be cached") {
             tokenCache.get(access) shouldBeSome AuthContext(user)
         }
 
         should("user should be retrieved from cache") {
-            tokenService.verify(access) shouldBeRight AuthContext(user)
+            jwtTokenService.verify(access) shouldBeRight AuthContext(user)
         }
     }
 
@@ -139,7 +146,7 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (_, access) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (_, access) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         tokenCache.revoke(access)
 
@@ -148,7 +155,7 @@ object JwtTokenServiceTests : ShouldSpec({
         }
 
         should("user should be extracted from access token") {
-            tokenService.verify(access) shouldBeRight AuthContext(user)
+            jwtTokenService.verify(access) shouldBeRight AuthContext(user)
         }
 
         should("user should be saved to token cache") {
@@ -163,7 +170,7 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (refresh, access) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (refresh, access) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         should("refresh token should be persisted") {
             refreshTokenPersistence.select(refresh).shouldBeSome()
@@ -172,7 +179,7 @@ object JwtTokenServiceTests : ShouldSpec({
         // we should wait 1 second since only difference in tokens is time
         delay(1.seconds)
 
-        val (newRefresh, newAccess) = tokenService.refresh(refresh).shouldBeRight()
+        val (newRefresh, newAccess) = jwtTokenService.refresh(refresh).shouldBeRight()
 
         should("refresh token should be rotated and access regenerated") {
             newRefresh shouldNotBeEqual refresh
@@ -196,7 +203,7 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (refresh, _) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (refresh, _) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         should("refresh token should be persisted and revoked") {
             val entity = refreshTokenPersistence.select(refresh).shouldBeSome()
@@ -213,7 +220,7 @@ object JwtTokenServiceTests : ShouldSpec({
         delay(1.seconds)
 
         should("refreshing should result in security error") {
-            tokenService.refresh(refresh) shouldBeLeft InvalidRefreshTokenStatus.nel()
+            jwtTokenService.refresh(refresh) shouldBeLeft InvalidRefreshTokenStatus.nel()
         }
     }
 
@@ -224,13 +231,13 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (refresh, _) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (refresh, _) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         should("refresh token should be persisted") {
             refreshTokenPersistence.select(refresh).shouldBeSome()
         }
 
-        val revokedRefresh = tokenService.revoke(refresh).shouldBeRight()
+        val revokedRefresh = jwtTokenService.revoke(refresh).shouldBeRight()
 
         should("after revoking token should be marked as revoked") {
             refreshTokenPersistence.select(revokedRefresh)
@@ -248,7 +255,7 @@ object JwtTokenServiceTests : ShouldSpec({
             userPersistence.select(user.id).shouldBeSome()
         }
 
-        val (refresh, _) = tokenService.generate(AuthContext(user)).shouldBeRight()
+        val (refresh, _) = jwtTokenService.generate(AuthContext(user)).shouldBeRight()
 
         should("refresh token should be persisted and revoked") {
             val entity = refreshTokenPersistence.select(refresh).shouldBeSome()
@@ -262,7 +269,7 @@ object JwtTokenServiceTests : ShouldSpec({
         }
 
         should("revoking should result in security error") {
-            tokenService.revoke(refresh) shouldBeLeft InvalidRefreshTokenStatus.nel()
+            jwtTokenService.revoke(refresh) shouldBeLeft InvalidRefreshTokenStatus.nel()
         }
     }
 })

@@ -1,4 +1,4 @@
-package hr.algebra.domace.domain.security.jwt
+package hr.algebra.domace.domain.security
 
 import arrow.core.Option
 

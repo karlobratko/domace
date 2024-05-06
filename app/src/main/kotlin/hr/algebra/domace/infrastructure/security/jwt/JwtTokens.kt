@@ -11,7 +11,7 @@ import hr.algebra.domace.domain.SecurityError.TokenGenerationError
 import hr.algebra.domace.domain.SecurityError.TokenVerificationError
 import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.domain.security.Secret
-import hr.algebra.domace.domain.security.jwt.Token
+import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.jwt.Tokens
 import io.github.nefilim.kjwt.JWSHMAC512Algorithm
 import io.github.nefilim.kjwt.JWT

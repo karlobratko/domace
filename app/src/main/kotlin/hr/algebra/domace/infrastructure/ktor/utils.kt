@@ -10,6 +10,8 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.parseAuthorizationHeader
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.ApplicationRequest
+import io.ktor.server.request.host
+import io.ktor.server.request.port
 import io.ktor.server.request.receiveNullable
 
 /**
@@ -59,3 +61,14 @@ val ApplicationRequest.authHeaderBlob
  */
 suspend inline fun <reified T> ApplicationCall.receiveOrNone(): Option<T> =
     catch { receiveNullable<T>() }.fold(ifEmpty = { none() }, ifSome = { it.toOption() })
+
+/**
+ * Extension function for the ApplicationCall class.
+ *
+ * This function constructs the server URL from the request's origin, host, and port.
+ * It uses the scheme (http or https) from the request's origin, and the host and port from the request itself.
+ * The constructed URL is in the format: "{scheme}://{host}:{port}".
+ *
+ * @return The server URL as a String.
+ */
+fun ApplicationCall.serverUrl() = "${request.origin.scheme}://${request.host()}:${request.port()}"

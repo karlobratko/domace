@@ -17,48 +17,100 @@ import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
 import hr.algebra.domace.domain.security.AuthContext
 import hr.algebra.domace.domain.security.Security
+import hr.algebra.domace.domain.security.Token
+import hr.algebra.domace.domain.security.Token.Access
+import hr.algebra.domace.domain.security.Token.Refresh
+import hr.algebra.domace.domain.security.TokenCache
 import hr.algebra.domace.domain.toEitherNel
 import hr.algebra.domace.domain.validation.ClaimsValidation
 import hr.algebra.domace.domain.validation.RefreshTokenValidation
 import hr.algebra.domace.domain.with
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+
+/**
+ * Interface for JWT Token Service.
+ *
+ * This interface defines the contract for a service that handles operations related to JWT (JSON Web Tokens).
+ * It includes methods for generating, verifying, refreshing, and revoking tokens.
+ */
+interface JwtTokenService {
+
+    /**
+     * Generates a pair of refresh and access tokens for a given authentication context.
+     *
+     * @param authContext The authentication context for which to generate the tokens.
+     * @return Either a DomainError or a Pair of Refresh and Access tokens.
+     */
+    suspend fun generate(authContext: AuthContext): Either<DomainError, Pair<Refresh, Access>>
+
+    /**
+     * Verifies an access token.
+     *
+     * @param token The access token to verify.
+     * @return Either a non-empty list of DomainErrors or an AuthContext.
+     */
+    suspend fun verify(token: Access): EitherNel<DomainError, AuthContext>
+
+    /**
+     * Refreshes a refresh token.
+     *
+     * @param token The refresh token to refresh.
+     * @return Either a non-empty list of DomainErrors or a Pair of Refresh and Access tokens.
+     */
+    suspend fun refresh(token: Refresh): EitherNel<DomainError, Pair<Refresh, Access>>
+
+    /**
+     * Revokes a refresh token.
+     *
+     * @param token The refresh token to revoke.
+     * @return Either a non-empty list of DomainErrors or a Refresh token.
+     */
+    suspend fun revoke(token: Refresh): EitherNel<DomainError, Refresh>
+}
 
 fun JwtTokenService(
     security: Security,
     algebra: Tokens,
     refreshTokenPersistence: RefreshTokenPersistence,
     accessTokenCache: TokenCache<AuthContext>
-) = object : TokenService {
-    override suspend fun generate(authContext: AuthContext): Either<DomainError, Token.Pair> =
+) = object : JwtTokenService {
+    override suspend fun generate(authContext: AuthContext): Either<DomainError, Pair<Refresh, Access>> =
         either {
             val subject = with(UserIdToSubjectConversion) { authContext.userId.convert() }
             val role = with(RoleToRoleClaimConversion) { authContext.role.convert() }
             val audience = Claims.Audience(authContext.userId.value.toString()).nel()
             val issuedAt = Claims.IssuedAt()
 
-            with(algebra) {
-                val refreshToken =
-                    Claims.Refresh(security.issuer, subject, audience, issuedAt, security.refreshLasting, role)
-                        .generateRefreshToken().bind()
+            coroutineScope {
+                with(algebra) {
+                    val refreshTokenJob = async {
+                        Claims.Refresh(security.issuer, subject, audience, issuedAt, security.refreshLasting, role)
+                            .generateRefreshToken().bind()
+                    }
 
-                val accessToken =
-                    Claims.Access(security.issuer, subject, audience, issuedAt, security.accessLasting, role)
-                        .generateAccessToken().bind()
+                    val accessToken =
+                        Claims.Access(security.issuer, subject, audience, issuedAt, security.accessLasting, role)
+                            .generateAccessToken().bind()
 
-                refreshTokenPersistence.insert(
-                    RefreshToken.New(
-                        authContext.userId,
-                        refreshToken,
-                        issuedAt,
-                        security.refreshLasting
-                    )
-                ).bind()
-                accessTokenCache.put(accessToken, authContext)
+                    val insertedRefreshToken = async {
+                        refreshTokenPersistence.insert(
+                            RefreshToken.New(
+                                authContext.userId,
+                                refreshTokenJob.await(),
+                                issuedAt,
+                                security.refreshLasting
+                            )
+                        ).bind()
+                    }
+                    accessTokenCache.put(accessToken, authContext)
 
-                Token.Pair(refresh = refreshToken, access = accessToken)
+                    insertedRefreshToken.await().token to accessToken
+                }
             }
         }
 
-    override suspend fun verify(token: Token.Access): EitherNel<DomainError, AuthContext> =
+    override suspend fun verify(token: Access): EitherNel<DomainError, AuthContext> =
         accessTokenCache.get(token)
             .fold(
                 ifEmpty = {
@@ -69,7 +121,6 @@ fun JwtTokenService(
                                     AuthContext(
                                         claims.subject.convert().toEitherNel().bind(),
                                         claims.role.convert().toEitherNel().bind()
-
                                     )
                                 }
                             }
@@ -79,11 +130,11 @@ fun JwtTokenService(
                 ifSome = { userId -> userId.right() }
             )
 
-    override suspend fun refresh(token: Token.Refresh): EitherNel<DomainError, Token.Pair> =
+    override suspend fun refresh(token: Refresh): EitherNel<DomainError, Pair<Refresh, Access>> =
         revokeTokenEntity(token)
             .flatMap { entity -> generate(AuthContext(entity)).toEitherNel() }
 
-    override suspend fun revoke(token: Token.Refresh): EitherNel<DomainError, Token.Refresh> =
+    override suspend fun revoke(token: Refresh): EitherNel<DomainError, Refresh> =
         revokeTokenEntity(token).map { entity -> entity.token }
 
     private suspend fun extractAndValidateClaims(token: Token): EitherNel<DomainError, Claims> =
@@ -95,7 +146,7 @@ fun JwtTokenService(
             }
         }
 
-    private suspend fun revokeTokenEntity(token: Token.Refresh): EitherNel<DomainError, RefreshToken.Entity> =
+    private suspend fun revokeTokenEntity(token: Refresh): EitherNel<DomainError, RefreshToken> =
         refreshTokenPersistence.select(token).toEitherNel { UnknownToken }
             .flatMap { entity ->
                 with(RefreshTokenValidation(RefreshToken.Status.Active)) {

@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.Option
 import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.model.RefreshToken
-import hr.algebra.domace.domain.security.jwt.Token
+import hr.algebra.domace.domain.security.Token
 import kotlin.time.Duration
 
 /**
@@ -14,18 +14,11 @@ interface RefreshTokenPersistence {
     /**
      * Inserts a new refresh token into the persistence layer.
      *
-     * @param refreshToken The new refresh token to be inserted.
-     * @return Either a DomainError or the inserted RefreshToken Entity.
-     */
-    suspend fun insert(refreshToken: RefreshToken.New): Either<DomainError, RefreshToken.Entity>
-
-    /**
-     * Selects a refresh token from the persistence layer based on its ID.
+     * @param refreshToken The `RefreshToken.New` object to be inserted into the persistence layer.
      *
-     * @param id The ID of the refresh token to be selected.
-     * @return An Option of RefreshToken Entity.
+     * @return The inserted `RefreshToken` object.
      */
-    suspend fun select(id: RefreshToken.Id): Option<RefreshToken.Entity>
+    suspend fun insert(refreshToken: RefreshToken.New): Either<DomainError, RefreshToken>
 
     /**
      * Selects a refresh token from the persistence layer based on its token.
@@ -33,7 +26,7 @@ interface RefreshTokenPersistence {
      * @param token The token of the refresh token to be selected.
      * @return An Option of RefreshToken Entity.
      */
-    suspend fun select(token: Token.Refresh): Option<RefreshToken.Entity>
+    suspend fun select(token: Token.Refresh): Option<RefreshToken>
 
     /**
      * Revokes a refresh token in the persistence layer based on its ID.
@@ -41,7 +34,7 @@ interface RefreshTokenPersistence {
      * @param tokenId The ID of the refresh token to be revoked.
      * @return Either a DomainError or the revoked RefreshToken Entity.
      */
-    suspend fun revoke(tokenId: RefreshToken.Id): Either<DomainError, RefreshToken.Entity>
+    suspend fun revoke(tokenId: RefreshToken.Id): Either<DomainError, RefreshToken>
 
     /**
      * Prolongs the validity of a refresh token in the persistence layer.
@@ -49,22 +42,14 @@ interface RefreshTokenPersistence {
      * @param prolong The refresh token to be prolonged.
      * @return Either a DomainError or the prolonged RefreshToken Entity.
      */
-    suspend fun prolong(prolong: RefreshToken.Prolong): Either<DomainError, RefreshToken.Entity>
+    suspend fun prolong(prolong: RefreshToken.Prolong): Either<DomainError, RefreshToken>
 
     /**
      * Revokes all expired refresh tokens in the persistence layer.
      *
      * @return A Set of revoked RefreshToken Entities.
      */
-    suspend fun revokeExpired(): Set<RefreshToken.Entity>
-
-    /**
-     * Deletes a refresh token from the persistence layer based on its ID.
-     *
-     * @param id The ID of the refresh token to be deleted.
-     * @return Either a DomainError or the ID of the deleted refresh token.
-     */
-    suspend fun delete(id: RefreshToken.Id): Either<DomainError, RefreshToken.Id>
+    suspend fun revokeExpired(): Set<RefreshToken>
 
     /**
      * Deletes all expired refresh tokens for a certain duration from the persistence layer.
@@ -72,5 +57,5 @@ interface RefreshTokenPersistence {
      * @param duration The duration for which the refresh tokens are expired.
      * @return A Set of deleted RefreshToken Entities.
      */
-    suspend fun deleteExpiredFor(duration: Duration): Set<RefreshToken.Entity>
+    suspend fun deleteExpiredFor(duration: Duration): Set<RefreshToken>
 }

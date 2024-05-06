@@ -3,6 +3,7 @@ package hr.algebra.domace.domain.security.jwt
 import arrow.core.Either
 import arrow.core.EitherNel
 import hr.algebra.domace.domain.SecurityError
+import hr.algebra.domace.domain.security.Token
 
 /**
  * An interface for managing tokens.
