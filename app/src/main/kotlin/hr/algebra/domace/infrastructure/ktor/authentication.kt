@@ -2,8 +2,8 @@ package hr.algebra.domace.infrastructure.ktor
 
 import hr.algebra.domace.domain.security.AuthContext
 import hr.algebra.domace.domain.security.authentication.AuthenticationScope
-import hr.algebra.domace.infrastructure.routes.respond
-import hr.algebra.domace.infrastructure.routes.toFailure
+import hr.algebra.domace.infrastructure.routes.dto.respond
+import hr.algebra.domace.infrastructure.routes.dto.toFailure
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
 import io.ktor.server.request.ApplicationRequest

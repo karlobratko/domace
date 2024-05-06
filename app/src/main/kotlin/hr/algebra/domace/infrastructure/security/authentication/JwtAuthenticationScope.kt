@@ -3,12 +3,11 @@ package hr.algebra.domace.infrastructure.security.authentication
 import arrow.core.flatMap
 import arrow.core.toOption
 import hr.algebra.domace.domain.SecurityError.AuthenticationError.MissingAuthorizationHeader
-import hr.algebra.domace.domain.security.AuthContext
-import hr.algebra.domace.domain.security.jwt.Token
-import hr.algebra.domace.domain.security.jwt.TokenService
+import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.authentication.AuthenticationScope
+import hr.algebra.domace.domain.security.jwt.JwtTokenService
 import hr.algebra.domace.domain.toEitherNel
-import hr.algebra.domace.infrastructure.ktor.authHeaderBlob
+import io.ktor.server.request.authorization
 import io.ktor.server.routing.Route
 import org.koin.core.qualifier.named
 import org.koin.ktor.ext.get
@@ -20,15 +19,14 @@ import org.koin.ktor.ext.get
  * If the authHeaderBlob is present, it is converted to a Token.Access and verified using the TokenService.
  * If the verification is successful, an AuthenticationContext is created with the verified token.
  *
- * @param tokenService The TokenService to use for verifying the token.
+ * @param jwtTokenService The TokenService to use for verifying the token.
  * @return An AuthenticationScope.
  */
-fun JwtAuthorizationScope(tokenService: TokenService) = AuthenticationScope {
-    authHeaderBlob.toOption()
+fun JwtAuthenticationScope(jwtTokenService: JwtTokenService) = AuthenticationScope {
+    authorization().toOption()
         .toEitherNel { MissingAuthorizationHeader }
         .map { Token.Access(it) }
-        .flatMap { tokenService.verify(it) }
-        .map { (userId, userRole) -> AuthContext(userId, userRole) }
+        .flatMap { jwtTokenService.verify(it) }
 }
 
 /**
@@ -36,12 +34,12 @@ fun JwtAuthorizationScope(tokenService: TokenService) = AuthenticationScope {
  * The Route is created by creating a JwtAuthorizationScope with the TokenService and invoking the body function
  * within this scope.
  *
- * @param tokenService The TokenService to use for creating the JwtAuthorizationScope.
+ * @param jwtTokenService The TokenService to use for creating the JwtAuthorizationScope.
  * @param body The function to invoke within the JwtAuthorizationScope.
  * @return A Route.
  */
-fun jwt(tokenService: TokenService, body: AuthenticationScope.() -> Route): Route {
-    return with(JwtAuthorizationScope(tokenService)) {
+fun jwt(jwtTokenService: JwtTokenService, body: AuthenticationScope.() -> Route): Route {
+    return with(JwtAuthenticationScope(jwtTokenService)) {
         body()
     }
 }

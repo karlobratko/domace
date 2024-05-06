@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.routes
+package hr.algebra.domace.infrastructure.routes.dto
 
 import arrow.core.Either
 import arrow.core.EitherNel
@@ -164,9 +164,9 @@ fun <Error, A> EitherNel<Error, A>.toResponse(
  * @return Unit.
  */
 context(PipelineContext<Unit, ApplicationCall>)
-suspend fun <A> Response<A>.respond(): Unit = call.respond(code, this)
+suspend inline fun <reified A : Any> Response<A>.respond(): Unit = call.respond(code, this)
 
-private class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<Response<A>> {
+class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<Response<A>> {
 
     @Serializable
     @SerialName("Response")
