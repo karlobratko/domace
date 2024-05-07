@@ -7,7 +7,7 @@ import hr.algebra.domace.domain.security.Token
 import hr.algebra.domace.domain.security.authentication.AuthenticationScope
 import hr.algebra.domace.domain.security.jwt.JwtTokenService
 import hr.algebra.domace.domain.toEitherNel
-import io.ktor.server.request.authorization
+import hr.algebra.domace.infrastructure.ktor.authHeaderBlob
 import io.ktor.server.routing.Route
 import org.koin.core.qualifier.named
 import org.koin.ktor.ext.get
@@ -23,7 +23,7 @@ import org.koin.ktor.ext.get
  * @return An AuthenticationScope.
  */
 fun JwtAuthenticationScope(jwtTokenService: JwtTokenService) = AuthenticationScope {
-    authorization().toOption()
+    authHeaderBlob.toOption()
         .toEitherNel { MissingAuthorizationHeader }
         .map { Token.Access(it) }
         .flatMap { jwtTokenService.verify(it) }

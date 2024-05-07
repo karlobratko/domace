@@ -31,6 +31,22 @@ fun interface ValidationScope<Error, A> {
 }
 
 /**
+ * Extension function to validate an object of type A using a given validation scope.
+ *
+ * This function takes a validation scope and applies it to the object. The result of the validation is returned as an
+ * `EitherNel` object. If the validation is successful, the `EitherNel` object will contain the object of type A.
+ * If the validation fails, the `EitherNel` object will contain an error of type Error.
+ *
+ * @receiver The object of type A to be validated.
+ * @param scope The validation scope to be used for validation.
+ *
+ * @return An `EitherNel` object containing a `Error` object if the validation fails, or the object of type A if the
+ * validation is successful.
+ */
+@JvmName("validateExt")
+fun <Error, A> A.validate(scope: ValidationScope<Error, A>): EitherNel<Error, A> = validate(this, scope)
+
+/**
  * Validates a given value using the provided validation scope.
  *
  * This function takes a value of type A and a validation scope. It applies the validation scope to the value

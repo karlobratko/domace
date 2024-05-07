@@ -2,10 +2,10 @@ package hr.algebra.domace.infrastructure.ktor
 
 import hr.algebra.domace.domain.RequestError.RequestBodyCouldNotBeParsed
 import hr.algebra.domace.domain.toEitherNel
-import hr.algebra.domace.infrastructure.routes.dto.respond
-import hr.algebra.domace.infrastructure.routes.dto.toFailure
+import hr.algebra.domace.infrastructure.routes.toFailure
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -36,6 +36,11 @@ inline fun <reified T> Route.get(
     crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
 ): Route = get(path) { call.receive<T>(body) }
 
+@KtorDsl
+inline fun <reified T> Route.get(
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
+): Route = get { call.receive<T>(body) }
+
 /**
  * Extension function for the Route class that creates a new POST route.
  *
@@ -57,6 +62,11 @@ inline fun <reified T> Route.post(
     path: String,
     crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
 ): Route = post(path) { call.receive<T>(body) }
+
+@KtorDsl
+inline fun <reified T> Route.post(
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
+): Route = post { call.receive<T>(body) }
 
 /**
  * Extension function for the Route class that creates a new PUT route.
@@ -80,6 +90,11 @@ inline fun <reified T> Route.put(
     crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
 ): Route = put(path) { call.receive<T>(body) }
 
+@KtorDsl
+inline fun <reified T> Route.put(
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
+): Route = put { call.receive<T>(body) }
+
 /**
  * Extension function for the Route class that creates a new DELETE route.
  *
@@ -101,6 +116,11 @@ inline fun <reified T> Route.delete(
     path: String,
     crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
 ): Route = delete(path) { call.receive<T>(body) }
+
+@KtorDsl
+inline fun <reified T> Route.delete(
+    crossinline body: suspend PipelineContext<Unit, ApplicationCall>.(T) -> Unit
+): Route = delete { call.receive<T>(body) }
 
 /**
  * Extension function for the ApplicationCall class that receives an object of a specified type from the request.
@@ -124,5 +144,5 @@ suspend inline fun <reified T> ApplicationCall.receive(
 ) {
     this@receive.receiveOrNone<T>().toEitherNel { RequestBodyCouldNotBeParsed }
         .onRight { body(this@PipelineContext, it) }
-        .onLeft { errors -> errors.toFailure().respond() }
+        .onLeft { errors -> call.respond(errors.toFailure()) }
 }

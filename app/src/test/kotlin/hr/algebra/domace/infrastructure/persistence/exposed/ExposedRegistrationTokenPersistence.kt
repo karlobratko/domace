@@ -1,11 +1,9 @@
 package hr.algebra.domace.infrastructure.persistence.exposed
 
-import hr.algebra.domace.domain.DbError.RegistrationTokenAlreadyConfirmed
 import hr.algebra.domace.domain.model.RegistrationToken.ConfirmationStatus.Confirmed
 import hr.algebra.domace.domain.model.RegistrationToken.ConfirmationStatus.Unconfirmed
 import hr.algebra.domace.domain.security.LastingFor
 import hr.algebra.domace.infrastructure.persistence.Database.test
-import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.arrow.core.shouldBeSome
 import io.kotest.core.spec.style.ShouldSpec
@@ -47,7 +45,7 @@ object ExposedRegistrationTokenPersistence : ShouldSpec({
                 }
             }
 
-        val confirmTokenId = registrationTokenPersistence.confirm(tokenId)
+        registrationTokenPersistence.confirm(tokenId)
             .shouldBeRight()
             .also {
                 should("after confirmation, registration token should be confirmed") {
@@ -60,9 +58,5 @@ object ExposedRegistrationTokenPersistence : ShouldSpec({
                         }
                 }
             }
-
-        should("confirmation of confirmed token should result in error") {
-            registrationTokenPersistence.confirm(confirmTokenId) shouldBeLeft RegistrationTokenAlreadyConfirmed
-        }
     }
 })

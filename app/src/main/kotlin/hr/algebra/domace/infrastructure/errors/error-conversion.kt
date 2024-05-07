@@ -55,10 +55,11 @@ val ErrorToHttpStatusCodeConversion = ErrorToHttpStatusCodeConversionScope {
         DbError.EmailAlreadyExists -> BadRequest
         DbError.InvalidUsernameOrPassword -> BadRequest
         DbError.ValueAlreadyExists -> BadRequest
-        DbError.RegistrationTokenAlreadyConfirmed -> BadRequest
         DbError.TokenAlreadyExists -> BadRequest
+        SecurityError.TokenVerificationError -> BadRequest
         SecurityError.InvalidRefreshTokenStatus -> BadRequest
         SecurityError.UnknownToken -> BadRequest
+        is SecurityError.RegistrationError -> BadRequest
         is RequestError -> BadRequest
         is ValidationError -> BadRequest
         SecurityError.ClaimsExtractionError -> Unauthorized
@@ -72,7 +73,6 @@ val ErrorToHttpStatusCodeConversion = ErrorToHttpStatusCodeConversionScope {
         DbError.UnhandledDbError -> InternalServerError
         is MailingError -> InternalServerError
         SecurityError.TokenGenerationError -> InternalServerError
-        SecurityError.TokenVerificationError -> InternalServerError
         UnhandledError -> InternalServerError
     }
 }

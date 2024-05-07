@@ -1,12 +1,12 @@
 package hr.algebra.domace.infrastructure.ktor
 
-import hr.algebra.domace.infrastructure.routes.dto.respond
-import hr.algebra.domace.infrastructure.routes.dto.toFailure
 import hr.algebra.domace.domain.security.AuthContext
 import hr.algebra.domace.domain.security.authentication.AuthenticationScope
 import hr.algebra.domace.domain.security.authorization.AuthorizationScope
+import hr.algebra.domace.infrastructure.routes.toFailure
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -525,6 +525,6 @@ suspend fun AuthContext.authorize(
     with(authorizationScope) {
         this@authorize.authorize()
             .onRight { context -> body(this@PipelineContext, context) }
-            .onLeft { errors -> errors.toFailure().respond() }
+            .onLeft { errors -> call.respond(errors.toFailure()) }
     }
 }

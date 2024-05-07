@@ -97,14 +97,14 @@ fun ExposedUserPersistence(db: Database, registrationTokenPersistence: Registrat
         override suspend fun select(
             username: User.Username,
             password: User.Password
-        ): Either<InvalidUsernameOrPassword, User> =
+        ): Either<InvalidUsernameOrPassword, User.WithToken> =
             ioTransaction(db = db) {
-                UsersTable
+                (UsersTable innerJoin RegistrationTokensTable)
                     .selectAll()
                     .where { (UsersTable.username eq username.value) }
                     .singleOrNone { checkPassword(password.value, it[UsersTable.passwordHash]) }
                     .toEither { InvalidUsernameOrPassword }
-                    .map { it.convert(ResultRowToUserConversion) }
+                    .map { it.convert(ResultRowToUserWithTokenConversion) }
             }
 
         override suspend fun select(id: User.Id): Option<User> = ioTransaction(db = db) {
@@ -172,6 +172,19 @@ private val ResultRowToUserConversion = ResultRowToUserConversionScope {
         User.Email(this[UsersTable.email]),
         User.PasswordHash(this[UsersTable.passwordHash]),
         Token.Register(this[UsersTable.registrationTokenId].value.toString()),
+        this[UsersTable.role]
+    )
+}
+
+private typealias ResultRowToUserWithTokenConversionScope = ConversionScope<ResultRow, User.WithToken>
+
+private val ResultRowToUserWithTokenConversion = ResultRowToUserWithTokenConversionScope {
+    User.WithToken(
+        User.Id(this[UsersTable.id].value),
+        User.Username(this[UsersTable.username]),
+        User.Email(this[UsersTable.email]),
+        User.PasswordHash(this[UsersTable.passwordHash]),
+        this.convert(ResultRowToRegistrationTokenConversion),
         this[UsersTable.role]
     )
 }

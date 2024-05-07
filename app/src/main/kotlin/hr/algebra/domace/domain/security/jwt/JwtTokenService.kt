@@ -132,7 +132,7 @@ fun JwtTokenService(
 
     override suspend fun refresh(token: Refresh): EitherNel<DomainError, Pair<Refresh, Access>> =
         revokeTokenEntity(token)
-            .flatMap { entity -> generate(AuthContext(entity)).toEitherNel() }
+            .flatMap { entity -> generate(AuthContext(entity.userId, entity.userRole)).toEitherNel() }
 
     override suspend fun revoke(token: Refresh): EitherNel<DomainError, Refresh> =
         revokeTokenEntity(token).map { entity -> entity.token }

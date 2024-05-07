@@ -5,6 +5,8 @@ import arrow.core.Option
 import hr.algebra.domace.domain.DbError.InvalidUsernameOrPassword
 import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.model.User
+import hr.algebra.domace.domain.model.User.Password
+import hr.algebra.domace.domain.model.User.Username
 
 /**
  * Interface for the persistence operations related to Users.
@@ -24,7 +26,7 @@ interface UserPersistence {
      * @param username The username of the user to be selected.
      * @return An Option of User Entity.
      */
-    suspend fun select(username: User.Username): Option<User>
+    suspend fun select(username: Username): Option<User>
 
     /**
      * Selects a user from the persistence layer based on their ID.
@@ -39,9 +41,9 @@ interface UserPersistence {
      *
      * @param username The username of the user to be selected.
      * @param password The password of the user to be selected.
-     * @return Either an InvalidUsernameOrPassword error or the User entity.
+     * @return Either an InvalidUsernameOrPassword error or the User entity joined with RegistrationToken.
      */
-    suspend fun select(username: User.Username, password: User.Password): Either<InvalidUsernameOrPassword, User>
+    suspend fun select(username: Username, password: Password): Either<InvalidUsernameOrPassword, User.WithToken>
 
     /**
      * Updates a user in the persistence layer.

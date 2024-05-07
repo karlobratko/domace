@@ -1,4 +1,4 @@
-package hr.algebra.domace.infrastructure.routes.dto
+package hr.algebra.domace.infrastructure.routes
 
 import arrow.core.Either
 import arrow.core.EitherNel
@@ -10,9 +10,7 @@ import hr.algebra.domace.domain.conversion.ConversionScope
 import hr.algebra.domace.infrastructure.errors.NelErrorToHttpStatusCodeConversion
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.response.respond
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -158,13 +156,15 @@ fun <Error, A> EitherNel<Error, A>.toResponse(
 }
 
 /**
- * Extension function on PipelineContext<Unit, ApplicationCall> to respond with a Response.
- * This function uses the Ktor respond function to send the Response to the client.
+ * Extension function for the ApplicationCall class to respond with a given Response object.
  *
- * @return Unit.
+ * This function takes a Response object as a parameter and sends it as a response to the client.
+ * The HTTP status code of the response is set to the code of the Response object.
+ * The body of the response is set to the Response object itself.
+ *
+ * @param response The Response object to send as a response.
  */
-context(PipelineContext<Unit, ApplicationCall>)
-suspend inline fun <reified A : Any> Response<A>.respond(): Unit = call.respond(code, this)
+suspend inline fun <reified A : Any> ApplicationCall.respond(response: Response<A>) = respond(response.code, response)
 
 class ResponseSerializer<A>(tSerializer: KSerializer<A>) : KSerializer<Response<A>> {
 

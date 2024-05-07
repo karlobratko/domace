@@ -1,6 +1,5 @@
 package hr.algebra.domace.domain.security
 
-import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.security.jwt.Claims
 import kotlin.time.Duration
@@ -39,15 +38,5 @@ data class Security(
  *
  * @property userId The ID of the user.
  * @property role The role of the user.
- *
- * @constructor Creates an instance of AuthContext from a User entity.
- * @param user The User entity.
- *
- * @constructor Creates an instance of AuthContext from a RefreshToken entity.
- * @param refreshToken The RefreshToken entity.
  */
-data class AuthContext(val userId: User.Id, val role: User.Role) {
-    constructor(user: User) : this(user.id, user.role)
-
-    constructor(refreshToken: RefreshToken) : this(refreshToken.userId, refreshToken.userRole)
-}
+data class AuthContext(val userId: User.Id, val role: User.Role)

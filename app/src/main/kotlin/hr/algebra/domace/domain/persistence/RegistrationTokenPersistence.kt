@@ -38,4 +38,13 @@ interface RegistrationTokenPersistence {
      * or a DomainError if it was not.
      */
     suspend fun confirm(id: Token.Register): Either<DomainError, Token.Register>
+
+    /**
+     * Resets a Registration Token in the persistence layer based on its ID.
+     *
+     * @param id The ID of the Registration Token to be reset.
+     *
+     * @return Either a DomainError or the ID of the reset Registration Token.
+     */
+    suspend fun reset(id: Token.Register): Either<DomainError, Token.Register>
 }

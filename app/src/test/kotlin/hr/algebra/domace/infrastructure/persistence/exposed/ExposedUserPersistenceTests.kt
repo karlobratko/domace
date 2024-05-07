@@ -130,7 +130,12 @@ object ExposedUserPersistenceTests : ShouldSpec({
             password = password
         ).shouldBeRight()
 
-        persistence.select(username, password) shouldBeRight inserted
+        persistence.select(username, password)
+            .shouldBeRight()
+            .should {
+                it.id shouldBeEqual inserted.id
+                it.registrationToken.token shouldBeEqual inserted.registrationToken
+            }
     }
 
     should("return none if record with id not found") {

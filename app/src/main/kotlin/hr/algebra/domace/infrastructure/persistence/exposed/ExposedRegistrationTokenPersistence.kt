@@ -5,7 +5,7 @@ import arrow.core.Option
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.singleOrNone
-import hr.algebra.domace.domain.DbError.RegistrationTokenAlreadyConfirmed
+import hr.algebra.domace.domain.DbError.NothingWasChanged
 import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.config.DefaultInstantProvider
 import hr.algebra.domace.domain.conversion.ConversionScope
@@ -25,7 +25,6 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.kotlin.datetime.timestampWithTimeZone
 import org.jetbrains.exposed.sql.selectAll
@@ -70,21 +69,34 @@ fun ExposedRegistrationTokenPersistence(db: Database, config: RegistrationConfig
         override suspend fun confirm(id: Token.Register): Either<DomainError, Token.Register> = either {
             ioTransaction(db = db) {
                 val updatedCount = RegistrationTokensTable.update({
-                    (RegistrationTokensTable.id eq UUID.fromString(id.value)) and
-                        (RegistrationTokensTable.confirmedAt.isNull())
+                    RegistrationTokensTable.id eq UUID.fromString(id.value)
                 }) {
                     it[confirmedAt] = DefaultInstantProvider.now().toJavaInstant().atOffset(UTC)
                 }
-                ensure(updatedCount > 0) { RegistrationTokenAlreadyConfirmed }
+                ensure(updatedCount > 0) { NothingWasChanged }
+
+                id
+            }
+        }
+
+        override suspend fun reset(id: Token.Register): Either<DomainError, Token.Register> = either {
+            ioTransaction(db = db) {
+                val updatedCount = RegistrationTokensTable.update({
+                    RegistrationTokensTable.id eq UUID.fromString(id.value)
+                }) {
+                    it[expiresAt] = (DefaultInstantProvider.now() + config.expiresAfter.value)
+                        .toJavaInstant().atOffset(UTC)
+                }
+                ensure(updatedCount > 0) { NothingWasChanged }
 
                 id
             }
         }
     }
 
-private typealias ResultRowToRegistrationTokenConversionScope = ConversionScope<ResultRow, RegistrationToken>
+typealias ResultRowToRegistrationTokenConversionScope = ConversionScope<ResultRow, RegistrationToken>
 
-private val ResultRowToRegistrationTokenConversion = ResultRowToRegistrationTokenConversionScope {
+val ResultRowToRegistrationTokenConversion = ResultRowToRegistrationTokenConversionScope {
     RegistrationToken(
         Token.Register(this[RegistrationTokensTable.id].value.toString()),
         CreatedAt(this[RegistrationTokensTable.createdAt].toInstant().toKotlinInstant()),

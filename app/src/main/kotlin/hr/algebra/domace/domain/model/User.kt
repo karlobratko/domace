@@ -19,6 +19,15 @@ data class User(
     val role: Role
 ) {
 
+    data class WithToken(
+        val id: Id,
+        val username: Username,
+        val email: Email,
+        val passwordHash: PasswordHash,
+        val registrationToken: RegistrationToken,
+        val role: Role
+    )
+
     class New private constructor(
         val username: Username,
         val email: Email,

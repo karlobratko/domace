@@ -29,8 +29,6 @@ sealed interface DbError : DomainError {
 
     data object UnhandledDbError : DbError
 
-    data object RegistrationTokenAlreadyConfirmed : DbError
-
     data object TokenAlreadyExists : DbError
 }
 
@@ -79,6 +77,18 @@ sealed interface SecurityError : DomainError {
 
     sealed interface AuthorizationError : SecurityError {
         data object UnauthorizedResourceAccess : AuthorizationError
+    }
+
+    sealed interface RegistrationError : SecurityError {
+        data object UnknownRegistrationToken : RegistrationError
+
+        data object RegistrationTokenExpired : RegistrationError
+
+        data object RegistrationTokenStillValid : RegistrationError
+
+        data object RegistrationTokenAlreadyConfirmed : RegistrationError
+
+        data object RegistrationTokenNotConfirmed : RegistrationError
     }
 }
 

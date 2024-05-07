@@ -149,9 +149,9 @@ fun ExposedRefreshTokenPersistence(db: Database) = object : RefreshTokenPersiste
             )
 }
 
-private typealias ResultRowToRefreshTokenConversionScope = ConversionScope<ResultRow, RefreshToken>
+typealias ResultRowToRefreshTokenConversionScope = ConversionScope<ResultRow, RefreshToken>
 
-private val ResultRowToRefreshTokenConversion = ResultRowToRefreshTokenConversionScope {
+val ResultRowToRefreshTokenConversion = ResultRowToRefreshTokenConversionScope {
     RefreshToken(
         RefreshToken.Id(this[RefreshTokensTable.id].value),
         User.Id(this[RefreshTokensTable.userId].value),
