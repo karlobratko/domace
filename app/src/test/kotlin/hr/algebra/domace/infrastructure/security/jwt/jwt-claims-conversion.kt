@@ -4,7 +4,7 @@ import arrow.core.nonEmptyListOf
 import arrow.core.none
 import arrow.core.some
 import hr.algebra.domace.domain.ConversionError.ValidationNotPerformed
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.jwt.Claims
 import io.github.nefilim.kjwt.JWSHMAC512Algorithm
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
@@ -18,6 +18,7 @@ object JwtClaimsConversion : ShouldSpec({
         should("convert from string claims to Claims based on use type") {
             val issuer = Claims.Issuer("issuer")
             val subject = Claims.Subject("subject")
+            val role = Claims.Role("Admin")
             val audience = nonEmptyListOf(Claims.Audience("audience-1"))
             val use = Claims.Use.Access
             val issuedAt = Claims.IssuedAt()
@@ -46,7 +47,8 @@ object JwtClaimsConversion : ShouldSpec({
                 subject = subject,
                 audience = audience,
                 issuedAt = issuedAt,
-                expiresAt = expiresAt
+                expiresAt = expiresAt,
+                role = role
             )
         }
 
@@ -58,6 +60,7 @@ object JwtClaimsConversion : ShouldSpec({
                 useAnswer = ::none,
                 issuedAtAnswer = ::none,
                 expiresAtAnswer = ::none,
+                roleAnswer = ::none
             )
 
             val actual = with(JwtToTokenClaimsConversion<JWSHMAC512Algorithm>(TestJwtStringFormat)) {

@@ -3,55 +3,49 @@ package hr.algebra.domace.domain.security
 import arrow.core.Option
 
 /**
- * An interface for a token cache.
+ * Interface for a cache that stores tokens.
  *
- * This interface defines methods for managing tokens in a cache.
- * The type of the subject associated with the tokens is generic and can be specified by the implementing class.
- *
- * The interface defines the following methods:
- * - `put`: Adds a token and its associated subject to the cache. Returns an `Option` of the old subject value.
- * - `get`: Retrieves the subject associated with a token from the cache. Returns an `Option` of the subject.
- * - `revoke`: Removes a token and its associated subject from the cache. Returns an `Option` of the old subject value.
- *
- * All methods are suspending, meaning they can be used in a coroutine context.
- *
- * @param Subject The type of the subject associated with the tokens.
+ * @param T The type of the value associated with each token in the cache.
  */
-interface TokenCache<Subject> {
-    /**
-     * Adds a token and its associated subject to the cache.
-     *
-     * This method is suspending and can be used in a coroutine context.
-     *
-     * @param token The token to add to the cache.
-     * @param claims The subject associated with the token.
-     *
-     * @return An `Option` of the subject. The `Option` should contain the old subject.Otherwise, it will be
-     * `Option.None`.
-     */
-    suspend fun put(token: Token, claims: Subject): Option<Subject>
+interface TokenCache<T> {
 
     /**
-     * Retrieves the subject associated with a token from the cache.
+     * Inserts a token-value pair into the cache.
      *
      * This method is suspending and can be used in a coroutine context.
      *
-     * @param token The token to retrieve the subject for.
+     * @param token The token to insert into the cache.
+     * @param value The value to associate with the token.
      *
-     * @return An `Option` of the subject. If the token is in the cache, the `Option` will contain the subject.
+     * @return An `Option` of `T`. If the operation was successful, the `Option` will be `Option.Some` with the
+     * value `T`.
      * Otherwise, it will be `Option.None`.
      */
-    suspend fun get(token: Token): Option<Subject>
+    suspend fun put(token: Token, value: T): Option<T>
 
     /**
-     * Removes a token and its associated subject from the cache.
+     * Retrieves the value associated with a token from the cache.
      *
      * This method is suspending and can be used in a coroutine context.
      *
-     * @param token The token to remove from the cache.
+     * @param token The token to retrieve the value for.
      *
-     * @return An `Option` of the subject. If the token was in the cache, the `Option` will contain the subject.
+     * @return An `Option` of `T`. If the token is found in the cache, the `Option` will be `Option.Some` with the
+     * value `T`.
      * Otherwise, it will be `Option.None`.
      */
-    suspend fun revoke(token: Token): Option<Subject>
+    suspend fun get(token: Token): Option<T>
+
+    /**
+     * Revokes a token from the cache.
+     *
+     * This method is suspending and can be used in a coroutine context.
+     *
+     * @param token The token to revoke.
+     *
+     * @return An `Option` of `T`. If the token was found and revoked, the `Option` will be `Option.Some` with the
+     * value `T`.
+     * Otherwise, it will be `Option.None`.
+     */
+    suspend fun revoke(token: Token): Option<T>
 }

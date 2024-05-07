@@ -2,6 +2,7 @@ package hr.algebra.domace.infrastructure.security
 
 import hr.algebra.domace.domain.TestTimeSource
 import hr.algebra.domace.domain.model.User
+import hr.algebra.domace.domain.security.LastingFor
 import hr.algebra.domace.domain.security.Token
 import io.kotest.assertions.arrow.core.shouldBeNone
 import io.kotest.assertions.arrow.core.shouldBeSome
@@ -11,8 +12,8 @@ import kotlin.time.Duration.Companion.minutes
 
 object InMemoryTokenCacheTests : ShouldSpec({
 
-    should("put and get Token and User.Id to cache") {
-        val lasting = Token.Lasting(15.minutes)
+    should("put and get Token and value to cache") {
+        val lasting = LastingFor(15.minutes)
         val cache = InMemoryTokenCache<User.Id>(lasting)
 
         cache.put(TOKEN_1, USERID_1)
@@ -20,8 +21,8 @@ object InMemoryTokenCacheTests : ShouldSpec({
         cache.get(TOKEN_1) shouldBeSome USERID_1
     }
 
-    should("overwrite old User.Id if same Token is put") {
-        val lasting = Token.Lasting(15.minutes)
+    should("overwrite old value if same Token is put") {
+        val lasting = LastingFor(15.minutes)
         val cache = InMemoryTokenCache<User.Id>(lasting)
 
         cache.put(TOKEN_1, USERID_1)
@@ -36,7 +37,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
     should("expire after specified period of time") {
         val testTimeSource = TestTimeSource()
 
-        val lasting = Token.Lasting(15.milliseconds)
+        val lasting = LastingFor(15.milliseconds)
         val cache = InMemoryTokenCache<User.Id>(lasting, timeSource = testTimeSource)
 
         cache.put(TOKEN_1, USERID_1)
@@ -47,7 +48,7 @@ object InMemoryTokenCacheTests : ShouldSpec({
     }
 
     should("revoke token") {
-        val lasting = Token.Lasting(15.minutes)
+        val lasting = LastingFor(15.minutes)
         val cache = InMemoryTokenCache<User.Id>(lasting)
 
         cache.put(TOKEN_1, USERID_1)

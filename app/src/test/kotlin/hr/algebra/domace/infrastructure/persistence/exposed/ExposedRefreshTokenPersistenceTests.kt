@@ -2,13 +2,15 @@ package hr.algebra.domace.infrastructure.persistence.exposed
 
 import arrow.core.Either
 import hr.algebra.domace.domain.DbError.NothingWasChanged
+import hr.algebra.domace.domain.DbError.TokenAlreadyExists
 import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.config.RoundedInstantProvider
 import hr.algebra.domace.domain.model.RefreshToken
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.RefreshTokenPersistence
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.LastingFor
 import hr.algebra.domace.domain.security.Token
+import hr.algebra.domace.domain.security.jwt.Claims
 import hr.algebra.domace.infrastructure.persistence.Database.test
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeNone
@@ -24,59 +26,70 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.time.Duration.Companion.minutes
 
 object ExposedRefreshTokenPersistenceTests : ShouldSpec({
-    val userPersistence = ExposedUserPersistence(test)
+    val registrationTokenPersistence = ExposedRegistrationTokenPersistence(
+        test,
+        RegistrationConfig(LastingFor(15.minutes))
+    )
+    val userPersistence = ExposedUserPersistence(test, registrationTokenPersistence)
     val persistence = ExposedRefreshTokenPersistence(test)
 
     beforeEach {
         transaction(test) {
-            create(UsersTable, RefreshTokensTable)
+            create(RegistrationTokensTable, UsersTable, RefreshTokensTable)
         }
     }
 
     afterEach {
         transaction(test) {
-            drop(UsersTable, RefreshTokensTable)
+            drop(RegistrationTokensTable, UsersTable, RefreshTokensTable)
         }
     }
 
-    should("should insert to database") {
-        val userId = insertUser(userPersistence).shouldBeRight().id
+    should("insert to database") {
+        val user = insertUser(userPersistence).shouldBeRight()
         val token = Token.Refresh("token")
         val issuedAt = Claims.IssuedAt()
-        val lasting = Token.Lasting(15.minutes)
+        val lasting = LastingFor(15.minutes)
         val expiresAt = Claims.ExpiresAt(issuedAt.value + lasting.value)
 
         val actual = insertRefreshToken(
             persistence,
-            userId = userId,
+            userId = user.id,
             token = token,
             issuedAt = issuedAt,
             lasting = lasting
         ).shouldBeRight()
 
         actual.should {
-            it.userId shouldBeEqual userId
+            it.userId shouldBeEqual user.id
             it.token shouldBeEqual token
             it.issuedAt shouldBeEqual issuedAt
             it.expiresAt shouldBeEqual expiresAt
             it.status shouldBeEqual RefreshToken.Status.Active
+            it.userRole shouldBeEqual user.role
         }
     }
 
-    should("return none if record with id not found") {
-        persistence.select(RefreshToken.Id(1)).shouldBeNone()
-    }
+    should("fail if same token is inserted") {
+        val userId = insertUser(userPersistence).shouldBeRight().id
 
-    should("return user if record with id found") {
-        val inserted = insertRefreshToken(
+        val inserted1 = insertRefreshToken(
             persistence,
-            userId = insertUser(userPersistence).shouldBeRight().id,
+            userId = userId,
             token = Token.Refresh("token"),
             issuedAt = Claims.IssuedAt(),
-            lasting = Token.Lasting(15.minutes),
+            lasting = LastingFor(15.minutes),
         ).shouldBeRight()
 
-        persistence.select(inserted.id) shouldBeSome inserted
+        persistence.select(inserted1.token).shouldBeSome()
+
+        insertRefreshToken(
+            persistence,
+            userId = userId,
+            token = Token.Refresh("token"),
+            issuedAt = Claims.IssuedAt(),
+            lasting = LastingFor(15.minutes),
+        ) shouldBeLeft TokenAlreadyExists
     }
 
     should("return none if record with token not found") {
@@ -89,7 +102,7 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
             userId = insertUser(userPersistence).shouldBeRight().id,
             token = Token.Refresh("token"),
             issuedAt = Claims.IssuedAt(),
-            lasting = Token.Lasting(15.minutes),
+            lasting = LastingFor(15.minutes),
         ).shouldBeRight()
 
         persistence.select(inserted.token) shouldBeSome inserted
@@ -101,7 +114,7 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
             userId = insertUser(userPersistence).shouldBeRight().id,
             token = Token.Refresh("token"),
             issuedAt = Claims.IssuedAt(),
-            lasting = Token.Lasting(15.minutes),
+            lasting = LastingFor(15.minutes),
         ).shouldBeRight()
 
         inserted.status shouldBeEqual RefreshToken.Status.Active
@@ -117,7 +130,7 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
 
     should("prolong token by id") {
         val issuedAt = Claims.IssuedAt()
-        val lasting = Token.Lasting(15.minutes)
+        val lasting = LastingFor(15.minutes)
 
         val inserted = insertRefreshToken(
             persistence,
@@ -150,54 +163,34 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
         ) shouldBeLeft NothingWasChanged
     }
 
-    should("delete by id") {
-        val inserted = insertRefreshToken(
-            persistence,
-            userId = insertUser(userPersistence).shouldBeRight().id,
-            token = Token.Refresh("token"),
-            issuedAt = Claims.IssuedAt(),
-            lasting = Token.Lasting(15.minutes),
-        ).shouldBeRight()
-
-        persistence.select(inserted.id).shouldBeSome()
-
-        persistence.delete(inserted.id) shouldBeRight inserted.id
-
-        persistence.select(inserted.id).shouldBeNone()
-    }
-
-    should("fail delete when not found by id") {
-        persistence.delete(RefreshToken.Id(1)) shouldBeLeft NothingWasChanged
-    }
-
     should("revoke expired") {
         val userId = insertUser(userPersistence).shouldBeRight().id
 
         val inserted1 = insertRefreshToken(
             persistence,
             userId = userId,
-            token = Token.Refresh("token"),
+            token = Token.Refresh("token1"),
             issuedAt = Claims.IssuedAt(),
-            lasting = Token.Lasting(15.minutes),
+            lasting = LastingFor(15.minutes),
         ).shouldBeRight()
 
-        persistence.select(inserted1.id).shouldBeSome()
+        persistence.select(inserted1.token).shouldBeSome()
 
         val inserted2 = insertRefreshToken(
             persistence,
             userId = userId,
-            token = Token.Refresh("token"),
+            token = Token.Refresh("token2"),
             issuedAt = Claims.IssuedAt(RoundedInstantProvider.now() - 30.minutes),
             expiresAt = Claims.ExpiresAt(RoundedInstantProvider.now() - 15.minutes),
         ).shouldBeRight()
 
-        persistence.select(inserted2.id).shouldBeSome()
+        persistence.select(inserted2.token).shouldBeSome()
 
         persistence.revokeExpired() shouldHaveSize 1
 
-        persistence.select(inserted1.id).shouldBeSome()
+        persistence.select(inserted1.token).shouldBeSome()
 
-        val revoked = persistence.select(inserted2.id).shouldBeSome()
+        val revoked = persistence.select(inserted2.token).shouldBeSome()
         revoked.status shouldBeEqual RefreshToken.Status.Revoked
     }
 
@@ -207,29 +200,29 @@ object ExposedRefreshTokenPersistenceTests : ShouldSpec({
         val inserted1 = insertRefreshToken(
             persistence,
             userId = userId,
-            token = Token.Refresh("token"),
+            token = Token.Refresh("token1"),
             issuedAt = Claims.IssuedAt(),
-            lasting = Token.Lasting(15.minutes),
+            lasting = LastingFor(15.minutes),
         ).shouldBeRight()
 
-        persistence.select(inserted1.id).shouldBeSome()
+        persistence.select(inserted1.token).shouldBeSome()
 
         val inserted2 = insertRefreshToken(
             persistence,
             userId = userId,
-            token = Token.Refresh("token"),
+            token = Token.Refresh("token2"),
             issuedAt = Claims.IssuedAt(RoundedInstantProvider.now() - 30.minutes),
             expiresAt = Claims.ExpiresAt(RoundedInstantProvider.now() - 15.minutes),
         ).shouldBeRight()
 
-        persistence.select(inserted2.id).shouldBeSome()
+        persistence.select(inserted2.token).shouldBeSome()
 
         val deleted = persistence.deleteExpiredFor(15.minutes) shouldHaveSize 1
         deleted.first() shouldBeEqual inserted2
 
-        persistence.select(inserted1.id).shouldBeSome()
+        persistence.select(inserted1.token).shouldBeSome()
 
-        persistence.select(inserted2.id).shouldBeNone()
+        persistence.select(inserted2.token).shouldBeNone()
     }
 })
 
@@ -238,8 +231,8 @@ private suspend fun insertRefreshToken(
     userId: User.Id,
     token: Token.Refresh,
     issuedAt: Claims.IssuedAt,
-    lasting: Token.Lasting
-): Either<DomainError, RefreshToken.Entity> {
+    lasting: LastingFor
+): Either<DomainError, RefreshToken> {
     return persistence.insert(
         RefreshToken.New(
             userId = userId,
@@ -256,7 +249,7 @@ private suspend fun insertRefreshToken(
     token: Token.Refresh,
     issuedAt: Claims.IssuedAt,
     expiresAt: Claims.ExpiresAt
-): Either<DomainError, RefreshToken.Entity> {
+): Either<DomainError, RefreshToken> {
     return persistence.insert(
         RefreshToken.New(
             userId = userId,

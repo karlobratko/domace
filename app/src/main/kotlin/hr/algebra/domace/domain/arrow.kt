@@ -3,7 +3,6 @@ package hr.algebra.domace.domain
 import arrow.core.Either
 import arrow.core.EitherNel
 import arrow.core.Nel
-import arrow.core.NonEmptyList
 import arrow.core.Option
 import arrow.core.getOrElse
 import arrow.core.left
@@ -11,6 +10,7 @@ import arrow.core.nel
 import arrow.core.raise.Raise
 import arrow.core.raise.RaiseAccumulate
 import arrow.core.raise.either
+import arrow.core.raise.fold
 import arrow.core.right
 import arrow.core.toNonEmptyListOrNone
 import arrow.core.toOption
@@ -18,6 +18,23 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.experimental.ExperimentalTypeInference
 import kotlin.contracts.InvocationKind.AT_MOST_ONCE as AtMostOnce
+
+/**
+ * This function is an inline function that takes a block of code and wraps it in an `EitherNel` type.
+ * `EitherNel` is a type from the Arrow library that represents a value of one of two possible types (a disjoint union).
+ * An instance of `EitherNel` is either an instance of `Left` or `Right`.
+ * The function invokes the block of code within a `Raise` context. If the block of code raises an error, the function
+ * will return a `Left` containing the error. If the block of code completes successfully, the function will return a
+ * `Right` containing the result.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the result of the block of code.
+ * @param block The block of code to be invoked. This block is invoked within a `Raise` context.
+ * @return An `EitherNel` containing either the error raised by the block of code (Either.Left), or the result of the
+ * block of code (Either.Right).
+ */
+inline fun <Error, A> eitherNel(block: Raise<Nel<Error>>.() -> A): EitherNel<Error, A> =
+    fold({ block.invoke(this) }, { Either.Left(it) }, { Either.Right(it) })
 
 /**
  * This function is an extension function for the List class. It attempts to convert the list to a NonEmptyList (Nel).
@@ -105,6 +122,32 @@ fun <Error> String.toLongOrLeftNel(error: () -> Error): EitherNel<Error, Long> =
 context(Raise<Error>)
 inline fun <Error, A> Option<A>.getOrRaise(error: () -> Error) = getOrElse { raise(error()) }
 
+/**
+ * This function is an extension function on the `Option<A>` type from the Arrow library.
+ * It is used to get the value from the `Option` if it is present (`Some`), or raise an error if it is not (`None`).
+ * The error is created by the provided `error` function.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the value contained in the `Option`.
+ * @param error A function that creates an instance of `Error`. This function is called if the `Option` is `None`.
+ * @return The value contained in the `Option` if it is `Some`.
+ * @throws Error If the `Option` is `None`, the function raises an error of type `Error`.
+ */
+context(Raise<Nel<Error>>)
+inline fun <Error, A> Option<A>.getOrRaiseNel(error: () -> Error) = getOrElse { raise(error().nel()) }
+
+/**
+ * This function is an extension function on the `Option<A>` type from the Arrow library.
+ * It is used to convert the `Option` to an `EitherNel` type.
+ * If the `Option` is `Some`, the contained value is wrapped in an `Either.Right`.
+ * If the `Option` is `None`, an error is created by the provided `ifEmpty` function and wrapped in an `Either.Left`.
+ *
+ * @param Error The type of the error that can be raised.
+ * @param A The type of the value contained in the `Option`.
+ * @param ifEmpty A function that creates an instance of `Error`. This function is called if the `Option` is `None`.
+ * @return An `EitherNel` containing either the error created by `ifEmpty` (Either.Left), or the value contained in
+ * the `Option` (Either.Right).
+ */
 inline fun <Error, A> Option<A>.toEitherNel(ifEmpty: () -> Error): EitherNel<Error, A> = toEither { ifEmpty().nel() }
 
 /**
@@ -119,7 +162,7 @@ inline fun <Error, A> Option<A>.toEitherNel(ifEmpty: () -> Error): EitherNel<Err
  * @throws Error If the iterable is empty, the function raises an error of type `Error`.
  */
 context(Raise<Error>)
-inline fun <Error, A> Iterable<A>.toNonEmptyListOrRaise(error: () -> Error): NonEmptyList<A> =
+inline fun <Error, A> Iterable<A>.toNonEmptyListOrRaise(error: () -> Error): Nel<A> =
     toNonEmptyListOrNone().getOrRaise { error() }
 
 /**

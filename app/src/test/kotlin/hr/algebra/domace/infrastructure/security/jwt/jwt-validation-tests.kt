@@ -11,16 +11,18 @@ import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingAudie
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingExpiresAtClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingIssuedAtClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingIssuerClaim
+import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingRoleClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingSubjectClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.MissingUseClaim
 import hr.algebra.domace.domain.SecurityError.ClaimsValidationError.UnsupportedUseClaim
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.jwt.Claims
 import io.github.nefilim.kjwt.DecodedJWT
 import io.github.nefilim.kjwt.JWSAlgorithm
 import io.github.nefilim.kjwt.JWSHMAC512Algorithm
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.datetime.Clock
@@ -57,19 +59,21 @@ object JwtValidationTests : ShouldSpec({
             useAnswer = ::none,
             issuedAtAnswer = ::none,
             expiresAtAnswer = ::none,
+            roleAnswer = ::none
         )
 
         val actual = with(JwtValidation<JWSHMAC512Algorithm>(TestJwtStringFormat)) {
             decoded.validate()
         }
 
-        actual shouldBeLeft nonEmptyListOf(
+        actual.shouldBeLeft() shouldContainExactlyInAnyOrder nonEmptyListOf(
             MissingIssuerClaim,
             MissingSubjectClaim,
             MissingAudienceClaim,
             MissingUseClaim,
             MissingIssuedAtClaim,
-            MissingExpiresAtClaim
+            MissingExpiresAtClaim,
+            MissingRoleClaim
         )
     }
 
@@ -143,6 +147,7 @@ val TestJwtStringFormat = Json
 fun <T : JWSAlgorithm> decodedJWT(
     issuerAnswer: () -> Option<String> = { "issuer".some() },
     subjectAnswer: () -> Option<String> = { "subject".some() },
+    roleAnswer: () -> Option<String> = { "Admin".some() },
     audienceAnswer: () -> Option<String> = {
         TestJwtStringFormat.encodeToString(
             ListSerializer(String.serializer()),
@@ -159,4 +164,5 @@ fun <T : JWSAlgorithm> decodedJWT(
     every { use() } answers { useAnswer() }
     every { issuedAt() } answers { issuedAtAnswer().map { it.toJavaInstant() } }
     every { expiresAt() } answers { expiresAtAnswer().map { it.toJavaInstant() } }
+    every { role() } answers { roleAnswer() }
 }

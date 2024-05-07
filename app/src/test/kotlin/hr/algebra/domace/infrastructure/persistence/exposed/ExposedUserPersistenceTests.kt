@@ -8,8 +8,10 @@ import hr.algebra.domace.domain.DbError.UsernameAlreadyExists
 import hr.algebra.domace.domain.DomainError
 import hr.algebra.domace.domain.model.User
 import hr.algebra.domace.domain.persistence.UserPersistence
+import hr.algebra.domace.domain.security.LastingFor
 import hr.algebra.domace.domain.validation.EmailValidation
 import hr.algebra.domace.domain.validation.PasswordValidation
+import hr.algebra.domace.domain.validation.RoleValidation
 import hr.algebra.domace.domain.validation.UsernameValidation
 import hr.algebra.domace.domain.with
 import hr.algebra.domace.infrastructure.persistence.Database.test
@@ -24,19 +26,24 @@ import io.kotest.matchers.should
 import org.jetbrains.exposed.sql.SchemaUtils.create
 import org.jetbrains.exposed.sql.SchemaUtils.drop
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.time.Duration.Companion.minutes
 
 object ExposedUserPersistenceTests : ShouldSpec({
-    val persistence = ExposedUserPersistence(test)
+    val registrationTokenPersistence = ExposedRegistrationTokenPersistence(
+        test,
+        RegistrationConfig(LastingFor(15.minutes))
+    )
+    val persistence = ExposedUserPersistence(test, registrationTokenPersistence)
 
     beforeEach {
         transaction(test) {
-            create(UsersTable)
+            create(RegistrationTokensTable, UsersTable)
         }
     }
 
     afterEach {
         transaction(test) {
-            drop(UsersTable)
+            drop(RegistrationTokensTable, UsersTable)
         }
     }
 
@@ -109,7 +116,7 @@ object ExposedUserPersistenceTests : ShouldSpec({
     }
 
     should("return none if record with username and password not found") {
-        persistence.select(VALID_USERNAME_1, VALID_PASSWORD_1).shouldBeNone()
+        persistence.select(VALID_USERNAME_1, VALID_PASSWORD_1) shouldBeLeft InvalidUsernameOrPassword
     }
 
     should("return user if record with username and password found") {
@@ -123,7 +130,12 @@ object ExposedUserPersistenceTests : ShouldSpec({
             password = password
         ).shouldBeRight()
 
-        persistence.select(username, password) shouldBeSome inserted
+        persistence.select(username, password)
+            .shouldBeRight()
+            .should {
+                it.id shouldBeEqual inserted.id
+                it.registrationToken.token shouldBeEqual inserted.registrationToken
+            }
     }
 
     should("return none if record with id not found") {
@@ -160,7 +172,6 @@ object ExposedUserPersistenceTests : ShouldSpec({
             it.username shouldBeEqual newUsername
             it.email shouldBeEqual inserted.email
             it.passwordHash shouldBeEqual inserted.passwordHash
-            it.registrationDate shouldBeEqual inserted.registrationDate
         }
     }
 
@@ -240,7 +251,6 @@ object ExposedUserPersistenceTests : ShouldSpec({
             it.username shouldBeEqual inserted.username
             it.email shouldBeEqual inserted.email
             it.passwordHash shouldNotBeEqual inserted.passwordHash
-            it.registrationDate shouldBeEqual inserted.registrationDate
         }
     }
 
@@ -277,9 +287,9 @@ suspend fun insertUser(
     username: User.Username = VALID_USERNAME_1,
     email: User.Email = VALID_EMAIL_1,
     password: User.Password = VALID_PASSWORD_1
-): Either<DomainError, User.Entity> {
-    val user = with(UsernameValidation, EmailValidation, PasswordValidation) {
-        User.New(username, email, password)
+): Either<DomainError, User> {
+    val user = with(UsernameValidation, EmailValidation, PasswordValidation, RoleValidation) {
+        User.New(username, email, password, User.Role.Agronomist)
     }.shouldBeRight()
 
     return persistence.insert(user)
@@ -290,7 +300,7 @@ private suspend fun updateUser(
     id: User.Id,
     username: User.Username,
     email: User.Email
-): Either<DomainError, User.Entity> {
+): Either<DomainError, User> {
     val user = with(UsernameValidation, EmailValidation) {
         User.Edit(id, username, email)
     }.shouldBeRight()
@@ -303,7 +313,7 @@ private suspend fun updateUserPassword(
     username: User.Username,
     oldPassword: User.Password,
     newPassword: User.Password
-): Either<DomainError, User.Entity> {
+): Either<DomainError, User> {
     val user = with(UsernameValidation, PasswordValidation) {
         User.ChangePassword(username, oldPassword, newPassword)
     }.shouldBeRight()

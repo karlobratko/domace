@@ -13,7 +13,7 @@ import kotlinx.serialization.serializer
  * The conversion is done using the provided deserialization strategy.
  *
  * @param deserializer The deserialization strategy to be used for converting the JSON file into an object of type T.
- * @param path The path to the JSON resource file. The path should be relative to the resources directory.
+ * @param path The path to the JSON resource file. The path should be relative to the `resources` directory.
  *
  * @return The object of type T obtained by decoding the JSON resource file.
  *
@@ -33,7 +33,7 @@ fun <T> Json.decodeFromResource(deserializer: DeserializationStrategy<T>, path: 
  * strategy.
  * The default deserialization strategy is obtained by calling `serializersModule.serializer<T>()`.
  *
- * @param path The path to the JSON resource file. The path should be relative to the resources directory.
+ * @param path The path to the JSON resource file. The path should be relative to the `resources` directory.
  *
  * @return The object of type T obtained by decoding the JSON resource file.
  *

@@ -9,10 +9,10 @@ import hr.algebra.domace.domain.SecurityError
 import hr.algebra.domace.domain.SecurityError.ClaimsExtractionError
 import hr.algebra.domace.domain.SecurityError.TokenGenerationError
 import hr.algebra.domace.domain.SecurityError.TokenVerificationError
-import hr.algebra.domace.domain.security.Claims
+import hr.algebra.domace.domain.security.jwt.Claims
+import hr.algebra.domace.domain.security.Secret
 import hr.algebra.domace.domain.security.Token
-import hr.algebra.domace.domain.security.Tokens
-import hr.algebra.domace.infrastructure.security.Secret
+import hr.algebra.domace.domain.security.jwt.Tokens
 import io.github.nefilim.kjwt.JWSHMAC512Algorithm
 import io.github.nefilim.kjwt.JWT
 import io.github.nefilim.kjwt.sign
@@ -31,13 +31,14 @@ fun JwtTokens(secret: Secret) = object : Tokens {
                 use(use.name)
                 issuedAt(issuedAt.value.toJavaInstant())
                 expiresAt(expiresAt.value.toJavaInstant())
+                role(role.value)
             }
             .sign(secret.value)
             .mapLeft { TokenGenerationError }
             .map {
-                when (this) {
-                    is Claims.Refresh -> Token.Refresh(it.rendered)
-                    is Claims.Access -> Token.Access(it.rendered)
+                when (this.use) {
+                    Claims.Use.Refresh -> Token.Refresh(it.rendered)
+                    Claims.Use.Access -> Token.Access(it.rendered)
                 }
             }
 

@@ -2,7 +2,19 @@ package hr.algebra.domace.domain
 
 sealed interface DomainError
 
-data object InternalUnhandledError : DomainError
+data object UnhandledError : DomainError
+
+sealed interface MailingError : DomainError {
+    data object CouldNotSendEmail : MailingError
+}
+
+sealed interface RequestError : DomainError {
+    data object RequestBodyCouldNotBeParsed : RequestError
+
+    data object InvalidRequestPathParameter : RequestError
+
+    data object InvalidRequestQueryParameter : RequestError
+}
 
 sealed interface DbError : DomainError {
     data object NothingWasChanged : DbError
@@ -14,6 +26,10 @@ sealed interface DbError : DomainError {
     data object EmailAlreadyExists : DbError
 
     data object InvalidUsernameOrPassword : DbError
+
+    data object UnhandledDbError : DbError
+
+    data object TokenAlreadyExists : DbError
 }
 
 sealed interface SecurityError : DomainError {
@@ -39,6 +55,10 @@ sealed interface SecurityError : DomainError {
         data object MissingIssuedAtClaim : ClaimsValidationError
 
         data object MissingExpiresAtClaim : ClaimsValidationError
+
+        data object MissingRoleClaim : ClaimsValidationError
+
+        data object UnsupportedRoleClaim : ClaimsValidationError
     }
 
     data object ClaimsExtractionError : SecurityError
@@ -50,6 +70,26 @@ sealed interface SecurityError : DomainError {
     data object UnknownToken : SecurityError
 
     data object InvalidRefreshTokenStatus : SecurityError
+
+    sealed interface AuthenticationError : SecurityError {
+        data object MissingAuthorizationHeader : AuthenticationError
+    }
+
+    sealed interface AuthorizationError : SecurityError {
+        data object UnauthorizedResourceAccess : AuthorizationError
+    }
+
+    sealed interface RegistrationError : SecurityError {
+        data object UnknownRegistrationToken : RegistrationError
+
+        data object RegistrationTokenExpired : RegistrationError
+
+        data object RegistrationTokenStillValid : RegistrationError
+
+        data object RegistrationTokenAlreadyConfirmed : RegistrationError
+
+        data object RegistrationTokenNotConfirmed : RegistrationError
+    }
 }
 
 sealed interface ConversionError : DomainError {
@@ -82,6 +122,10 @@ sealed interface ValidationError : DomainError {
             data object NoUppercaseCharsInPassword : PasswordValidationError
 
             data object NoSpecialCharsInPassword : PasswordValidationError
+        }
+
+        sealed interface RoleValidationError : UserValidationError {
+            data object AdminCanNotBeCreated : RoleValidationError
         }
     }
 }
